@@ -1,0 +1,66 @@
+%%
+%% Author: Fabian Klopfer (fabian.klopfer@ieee.org) 
+%%
+
+% Preamble
+\documentclass[a4paper]{article}
+
+% Packages
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{enumerate}
+\usepackage{fancyhdr}
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{a4wide}
+\usepackage{graphicx}
+\usepackage{wrapfig}
+\usepackage{tikz}
+\usepackage{listings}
+\usepackage{colortbl}
+\usepackage{tabularx}
+\usepackage{hyperref}
+\usepackage{multicol}
+\usepackage{float}
+
+\setlength{\headheight}{24pt}
+
+\pagestyle{fancy}
+\lhead{Fabian Klopfer (956507)|Simon Suckut (TODO)}
+\rhead{Database Systems and Architecture\\Assignment 2}
+
+% Document
+\begin{document}
+	\section*{Exercise 1: Free Blocks}\label{sec:exercise1}
+   \begin{enumerate}[a.]
+		\item Name an advantage and a drawback for each block list
+            and block bitmap. \\
+            Linked List: + no external fragmentation, can grow in file 
+            size - no pre-allocation, mostly not contingous \\
+            Bitmap: + smaller, faster look-up, pre-allocatable 
+            - not growable (reallocation for additional blocks possible)\\
+        \item 8192MB DB file(s), 16KB blocksize, block bitmap. How 
+            many KB are needed to reference all blocks? \\
+            $(2^{13} << 10 )KB >> 4 \frac{KB}{block} = (2^{13} << 6) 
+            blocks = 2^{19} blocks$  and \\
+            $ 1 \frac{bit}{block} \cdot 2^{19} blocks = 2^{19} bit
+            = (2^{19} >> 8) byte = (2^{11} >> 10) KB = 2^{1} KB = 2 KB$ \\
+        \item see modified source file
+   \end{enumerate}
+
+	\section*{Exercise 2: Buffer Management: OS vs. DB}\label{sec:exercise2}
+        \begin{enumerate}[a.]
+            \item Virtural memory is designed to store files of arbitary size and large objects like videos, images, computer graphics models for gaming and so on. It is also designed to map devices to logical addresses in order to control the hardware
+            \item The buffer manager is optimized for data of a specific kind, e.g. RDBMS are optimized for fixed size data, elastic serach is optimized for documents, ...
+	    \item a combination, e.g. if one starts at the mindset of a relational db and wants to search documents, it seems reasonable to index and store the files differently. There are also interesting methods for semantic clustering e.g. hebbian learning in order to find frequent itemsets
+        \end{enumerate}
+
+
+	\section*{Exercise 3: Measuring Performance}\label{sec:exercise3}
+	\begin{enumerate}[a.]
+        \item $\sum_{i=0}^{100000000}(i)^2$
+        \item The runtimes vary, but mostly decrease due to vm optimization/caching \\
+	\item The benchmark framework JMH creates multiple forks of the JVM and per fork multiple warm-up iterations in order to reach a stable state for the benchmark. Further it measures the performance of the whole system in mean runtime and standard deviation (and other things)
+    \end{enumerate}
+\end{document}
