@@ -27,7 +27,7 @@
 \setlength{\headheight}{24pt}
 
 \pagestyle{fancy}
-\lhead{Fabian Klopfer (956507)|Simon Suckut (TODO)}
+\lhead{Fabian Klopfer (956507)|Simon Suckut (710134)}
 \rhead{Database Systems and Architecture\\Assignment 2}
 
 % Document
@@ -53,7 +53,8 @@
         \begin{enumerate}[a.]
             \item Virtural memory is designed to store files of arbitary size and large objects like videos, images, computer graphics models for gaming and so on. It is also designed to map devices to logical addresses in order to control the hardware
             \item The buffer manager is optimized for data of a specific kind, e.g. RDBMS are optimized for fixed size data, elastic serach is optimized for documents, ...
-	    \item a combination, e.g. if one starts at the mindset of a relational db and wants to search documents, it seems reasonable to index and store the files differently. There are also interesting methods for semantic clustering e.g. hebbian learning in order to find frequent itemsets
+            \item The buffer manager and Virtual memory have some things im common. They both split the data in Pages and they both swap pages to the disk if it is not needed at the moment. 
+	    \item a combination, e.g. if one starts at the mindset of a relational db and wants to search documents, it seems reasonable to index and store the files differently. There are also interesting methods for semantic clustering e.g. hebbian learning in order to find frequent itemsets. But the virtual memory can not replace the buffer manager as the database has not enouth controll over it.
         \end{enumerate}
 
 
