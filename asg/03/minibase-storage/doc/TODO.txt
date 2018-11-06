@@ -1,0 +1,82 @@
+=====================
+Ideas For Future Work
+=====================
+
+* New Components:
+
+  1. Rewrite/simplify the Disk Space Manager
+     (add class for Java file I/O of pages)
+
+  2. Replace HashIndex with Linear Hashing
+
+  3. B+Trees (including SortedPage)
+
+  4. ExtSort, DupElim, SortMerge, etc.
+
+* Simplify Buffer Manager API
+
+  One of the most difficult concepts for the undergraduate students to grasp
+  was how to deal with pages, i.e. that data isn't just stored entirely in
+  memory in convenient objects, but rather is organized across multiple
+  disk blocks.
+  
+  For one, the "skipRead" parameter of pinPage generated more newsgroup
+  activity than any other topic throughout the semester.  One idea is to
+  simplify the pinPage method as follows: public Page pinPage(PageId pageno)
+
+  It's unclear how this may affect the code, as the "skipRead" logic (an
+  artifact from "javaminibase") is scattered throughout the project.
+
+* Reorganize Hash Index Code
+
+  This started out as an extendible hashing project as described on pages 373
+  to 379 of the textbook (3rd edition) except for a special variant: it would
+  automatically adapt to the data set by choosing whether to use overflow
+  pages or to split the directory, or perhaps a combination of the two!  When
+  it became obvious that this was not a good idea, we settled for a simple
+  static hashing index.  So the current solution code is a little overkill.
+
+  For the first project, many students implemented their entire solution in
+  one file.  So as a secondary objective for this indexing project, we wanted
+  to show the students how to divide a major data structure across several
+  classes.  The code can be "normalized" further by moving bucket-level code
+  of HashIndex (i.e. delete file) and HashScan (i.e. hasNext) into HashBucket.
+
+  Also, SortedPage was simply an exercise, and isn't really useful for use in
+  a hash-based index.  As such, HashBucket shouldn't extend SortedPage.  This
+  was also confusing because a bucket isn't really a single page either.
+
+* Relational Operator Tweaks
+
+  Perhaps it would have been nice if the low level scans (i.e. HeapScan and
+  HashScan) had support for restarting.  Then the FileScan and IndexScan
+  classes probably wouldn't have been necessary.
+
+  The new "..." Java syntax is fun, but causes some problems in Selection and
+  Projection when the list is empty.
+
+  This implementation assumes that hasNext will always be called before each
+  getNext, but this assumption should probably be removed in the future.
+
+* Java Memory Management
+
+  Although this version of Minibase makes substantial improvements of memory
+  usage (for example, see the original Convert.java class), it still generates
+  a lot of garbage.  Perhaps the test drivers should also print freeMemory,
+  totalMemory, and maxMemory (see the java.lang.Runtime class) to catch
+  students using too much temporary memory.
+
+  For query optimization, it would have also been better to implement more
+  "statistics methods" along the way.  For example, page counts, min and max
+  data/key values, etc.
+
+* Global Package
+
+  The Minibase class might be more user friendly with static blocks (i.e.
+  instead of having to call the init method on startup).
+  
+  Instead of GlobalConst, there should be an .ini file.  Move all the Msql and
+  TestDriver constants there, if applicable, and try to make as few classes as
+  possible implement GlobalConst.
+
+  Should we move Tuple, Schema, and Predicate into global?

@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+   Copyright (c) 1996-1997 University of Wisconsin. 
+   Copyright (c) 2006 Purdue University. 
+   Copyright (c) 2013-2016 University of Konstanz. 
+
+   This software is the proprietary information of University of Konstanz. 
+   Use is subject to license terms.
+-->
+
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+
+   <modelVersion>4.0.0</modelVersion>
+
+   <groupId>minibase</groupId>
+   <artifactId>minibase-storage</artifactId>
+   <version>1.0-SNAPSHOT</version>
+   <packaging>jar</packaging>
+   <name>Minibase for Java</name>
+   <description>Minibase is a single-user database management system intended for educational use. Its main purpose is for students to study and implement several DBMS components, without support for concurrency control and recovery. This version is a partial port to Java of the original version written in C, improved upon in C++.</description>
+   <url>http://www.informatik.uni-konstanz.de/grossniklaus/software/minibase-for-java/</url>
+   <inceptionYear>2013</inceptionYear>
+
+   <prerequisites>
+      <maven>${maven.version}</maven>
+   </prerequisites>
+
+   <organization>
+      <name>Department of Computer and Information Science, University of Konstanz</name>
+      <url>http://www.informatik.uni-konstanz.de/</url>
+   </organization>
+
+   <repositories>
+      <repository>
+         <releases>
+            <enabled>true</enabled>
+            <updatePolicy>daily</updatePolicy>
+         </releases>
+         <snapshots>
+            <enabled>false</enabled>
+         </snapshots>
+         <id>central</id>
+         <name>Official Maven2 Repository</name>
+         <url>http://repo.maven.apache.org/maven2</url>
+      </repository>
+   </repositories>
+
+   <pluginRepositories>
+      <pluginRepository>
+         <releases>
+            <enabled>true</enabled>
+            <updatePolicy>daily</updatePolicy>
+         </releases>
+         <snapshots>
+            <enabled>false</enabled>
+         </snapshots>
+         <id>central</id>
+         <name>Official Maven2 Repository</name>
+         <url>http://repo.maven.apache.org/maven2</url>
+      </pluginRepository>
+   </pluginRepositories>
+
+   <dependencyManagement>
+      <dependencies>
+         <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>${junit.version}</version>
+         </dependency>
+      </dependencies>
+   </dependencyManagement>
+
+   <properties>
+      <!-- Global Project Properties -->
+      <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+      <maven.compiler.source>1.8</maven.compiler.source>
+      <maven.compiler.target>1.8</maven.compiler.target>
+      <!-- Dependency Versions -->
+      <maven.version>3.2.0</maven.version>
+      <junit.version>4.12</junit.version>
+      <checkstyle.version>6.19</checkstyle.version>
+      <!-- Maven Plugin Versions -->
+      <maven-assembly-plugin.version>2.6</maven-assembly-plugin.version>
+      <maven-checkstyle-plugin.version>2.17</maven-checkstyle-plugin.version>
+      <maven-compiler-plugin.version>3.3</maven-compiler-plugin.version>
+      <maven-jar-plugin.version>2.6</maven-jar-plugin.version>
+      <maven-surefire-plugin.version>2.19</maven-surefire-plugin.version>
+   </properties>
+
+   <dependencies>
+      <dependency>
+         <groupId>junit</groupId>
+         <artifactId>junit</artifactId>
+         <scope>test</scope>
+      </dependency>
+   </dependencies>
+
+   <build>
+      <pluginManagement>
+         <plugins>
+            <plugin>
+               <groupId>org.apache.maven.plugins</groupId>
+               <artifactId>maven-compiler-plugin</artifactId>
+               <version>${maven-compiler-plugin.version}</version>
+            </plugin>
+            <plugin>
+               <groupId>org.apache.maven.plugins</groupId>
+               <artifactId>maven-surefire-plugin</artifactId>
+               <version>${maven-surefire-plugin.version}</version>
+            </plugin>
+            <plugin>
+               <groupId>org.apache.maven.plugins</groupId>
+               <artifactId>maven-checkstyle-plugin</artifactId>
+               <version>${maven-checkstyle-plugin.version}</version>
+               <dependencies>
+                 <dependency>
+                   <groupId>com.puppycrawl.tools</groupId>
+                   <artifactId>checkstyle</artifactId>
+                   <version>${checkstyle.version}</version>
+                 </dependency>
+               </dependencies>
+            </plugin>
+         </plugins>
+      </pluginManagement>
+      <plugins>
+         <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-compiler-plugin</artifactId>
+            <configuration>
+               <source>${maven.compiler.source}</source>
+               <target>${maven.compiler.target}</target>
+               <debug>true</debug>
+               <optimize>false</optimize>
+               <showDeprecation>true</showDeprecation>
+               <showWarnings>true</showWarnings>
+            </configuration>
+         </plugin>
+         <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-surefire-plugin</artifactId>
+            <configuration>
+               <enableAssertions>true</enableAssertions>
+               <forkCount>0</forkCount>
+               <useSystemClassLoader>true</useSystemClassLoader>
+               <useManifestOnlyJar>false</useManifestOnlyJar>
+               <includes>
+                  <include>**/*Test.java</include>
+               </includes>
+               <excludes>
+                  <exclude>**/Abstract*Test.java</exclude>
+                  <exclude>**/*PerformanceTest.java</exclude>
+               </excludes>
+               <additionalClasspathElements>
+                  <additionalClasspathElement>src/test/resources</additionalClasspathElement>
+               </additionalClasspathElements>
+            </configuration>
+         </plugin>
+         <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-checkstyle-plugin</artifactId>
+            <configuration>
+               <sourceDirectory>${project.build.sourceDirectory}</sourceDirectory>
+               <includeTestSourceDirectory>true</includeTestSourceDirectory>
+               <includeResources>false</includeResources>
+               <configLocation>checkstyle.xml</configLocation>
+               <failOnViolation>true</failOnViolation>
+               <violationSeverity>warning</violationSeverity>
+            </configuration>
+            <executions>
+               <execution>
+                  <phase>process-sources</phase>
+                  <goals>
+                     <goal>checkstyle</goal>
+                     <goal>check</goal>
+                  </goals>
+               </execution>
+            </executions>
+         </plugin>
+      </plugins>
+   </build>
+</project>

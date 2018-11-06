@@ -1,0 +1,20 @@
+This project is a derivative work of Minibase, developed by Mike Carey, Raghu
+Ramakrishnan, and a number of graduate students at the University of Wisconsin
+at Madison (see http://www.cs.wisc.edu/coral/minibase/intro/history.html).  It
+is primarily based on the "javaminibase" code available to course instructors
+via the textbook website for "Database Management Systems" (Ramakrishnan and
+Gehrke, see http://www.cs.wisc.edu/~dbbook/).
+
+The main goals for this work were as follows:
+  1. Complete and disambiguate the documentation
+  2. Make the architecture more consistent
+  3. Simplify the excessive exception handling
+  4. Create support for running SQL statements
+
+While working with the first couple of java packages, I simply tried to clean
+up the code and complete the missing documentation.  However, this approach
+became so complicated that it was easier in the end just to rewrite the
+remaining components.  This version represents only one semester's effort, and
+"someday" I hope to accomplish the remaining list of goals in the TODO.txt
+file.  Of course, if anybody else has the time and interest, I would appreciate
+any contributions. ;)
