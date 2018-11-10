@@ -10,91 +10,104 @@
  */
 package minibase.storage.buffer;
 
+import minibase.storage.buffer.policy.ReplacementPolicy;
 import minibase.storage.file.DiskManager;
+
+import java.util.Arrays;
 import java.util.HashMap;
 
 public final class BufferManagerGroup00 implements BufferManager {
 
-   private final DiskManager diskManager;
-   private final int numBuffers;
-   private final ReplacementStrategy replacementStrategy;
-   private Page<?>[] bufferPages;
-   private HashMap<PageID, Integer> pageToFrameMapping;
+    private final DiskManager diskManager;
+    private final int numBuffers;
+    private final ReplacementPolicy replacementPolicy;
+    private Page<?>[] bufferPages;
+    private HashMap<PageID, Integer> pageToSlot;
 
 
 
-   public BufferManagerGroup00(final DiskManager diskManager, final int bufferPoolSize,
-         final ReplacementStrategy replacementStrategy) {
-      this.diskManager = diskManager;
-      this.numBuffers = bufferPoolSize;
-      this.replacementStrategy = replacementStrategy;
-      this.bufferPages = new Page<?>[bufferPoolSize];
-      this.pageToFrameMapping = new HashMap<>();
+    public BufferManagerGroup00(final DiskManager diskManager, final int bufferPoolSize,
+                                final ReplacementStrategy replacementStrategy) {
+        this.diskManager = diskManager;
+        this.numBuffers = bufferPoolSize;
+        this.replacementPolicy = replacementStrategy.newInstance(this.numBuffers);
+        this.bufferPages = new Page<?>[bufferPoolSize];
+        this.pageToSlot = new HashMap<>();
 
-   }
+    }
 
-   @Override
-   public DiskManager getDiskManager() { return this.diskManager; }
+    @Override
+    public DiskManager getDiskManager() { return this.diskManager; }
 
-   @Override
-   public Page<?> newPage() {
-      PageID nPageID = this.diskManager.allocatePage();
-      Page nPage = this.pinPage(nPageID);
-      System.arraycopy(new Byte[DiskManager.PAGE_SIZE], 0, nPage.getData(), 0, DiskManager.PAGE_SIZE);
-      nPage.setDirty(true);
-      flushPage(nPage);
-      return nPage;
-   }
+    @Override
+    public Page<?> newPage() { // TODO
+        PageID nPageID = this.diskManager.allocatePage();
+        Page nPage = this.pinPage(nPageID);
+        Arrays.fill(nPage.getData(), (byte) 0);
+        nPage.setDirty(true);
+        flushPage(nPage);
+        return nPage;
+    }
 
-   @Override
-   public void freePage(final Page<?> page) {
-      flushPage(page);
-      this.diskManager.deallocatePage(page.getPageID());
-   }
+    @Override
+    public void freePage(final Page<?> page) { // TODO
 
-   @Override
-   public <T extends PageType> Page<T> pinPage(final PageID pageID) {
-       if(!pageID.isValid()) throw new IllegalStateException();
-      // TODO implement method
-      throw new UnsupportedOperationException("Not yet implemented.");
-   }
+    }
 
-   @Override
-   public void unpinPage(final Page<?> page, final UnpinMode mode) {
-      // TODO implement method
-      throw new UnsupportedOperationException("Not yet implemented.");
-   }
+    @Override
+    public <T extends PageType> Page<T> pinPage(final PageID pageID) {
+        if(pageToSlot.containsKey(pageID)) {
+            Page<T> page = (Page<T>)bufferPages[pageToSlot.get(pageID)];
+            page.incrementPinCount();
+            return  page;
+        } else if (this.getNumUnpinned() > 1) {
+            int victim_slot = replacementPolicy.pickVictim();
+            Page victim_page = bufferPages[victim_slot];
+            flushPage(victim_page);
+            victim_page.reset(pageID);
+            diskManager.readPage(pageID, victim_page.getData());
+            replacementPolicy.stateChanged(victim_slot, ReplacementPolicy.PageState.PINNED);
+            pageToSlot.put(pageID, victim_slot);
+            victim_page.incrementPinCount();
+            return (Page<T>)victim_page;
+        }
+        throw new IllegalStateException("No free pages available");
+    }
 
-   @Override
-   public void flushPage(final Page<?> page) {
-      if (page.isDirty()) {
-         // write the page to disk
-         this.getDiskManager().writePage(page.getPageID(), page.getData());
-         // the buffer page is now clean
-         page.setDirty(false);
-      }
-   }
+    @Override
+    public void unpinPage(final Page<?> page, final UnpinMode mode) {
+        if (!pageToSlot.containsKey(page.getPageID())) throw new IllegalStateException("Page" + page.getPageID() +
+                "not in Memory");
 
-   @Override
-   public void flushAllPages() {
-      for( Page page : this.bufferPages) flushPage(page);
-   }
+        if (mode == UnpinMode.CLEAN) page.setDirty(false); else page.setDirty(true);
 
-   @Override
-   public int getNumBuffers() { return this.numBuffers; }
+        page.decrementPinCount();
+        if( page.getPinCount() < 1)  {
+            PageID pageID = page.getPageID();
+            replacementPolicy.stateChanged(pageToSlot.get(pageID), ReplacementPolicy.PageState.UNPINNED);
+            pageToSlot.remove(pageID);
+        }
+    }
 
-   @Override
-   public int getNumPinned() {
-       int sum = 0;
-       for ( int bufPageNr : this.pageToFrameMapping.values())
-           sum += bufPageNr < 0 ? 1 : 0;
-       return sum;
-   }
+    @Override
+    public void flushPage(final Page<?> page) {
+        if (page.isDirty()) {
+            // write the page to disk
+            this.diskManager.writePage(page.getPageID(), page.getData());
+            // the buffer page is now clean
+            page.setDirty(false);
+        }
+    }
 
-   @Override
-   public int getNumUnpinned() {
-      return this.getNumBuffers() - this.getNumPinned();
-   }
+    @Override
+    public void flushAllPages() { for( Page page : this.bufferPages) flushPage(page); }
 
+    @Override
+    public int getNumBuffers() { return this.numBuffers; }
 
+    @Override
+    public int getNumPinned() { return pageToSlot.size(); }
+
+    @Override
+    public int getNumUnpinned() { return this.getNumBuffers() - this.getNumPinned(); }
 }
