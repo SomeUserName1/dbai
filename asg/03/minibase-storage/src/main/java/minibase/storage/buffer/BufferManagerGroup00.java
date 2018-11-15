@@ -50,14 +50,14 @@ public final class BufferManagerGroup00 implements BufferManager {
 
    @Override
    public void freePage(final Page< ? > page) {
-      if (page.getPinCount() != 1) {
-         throw new IllegalArgumentException("Page must be pined exactly once when freePage() ist called");
-      }
-      final PageID pageID = page.getPageID();
-      final int slotID = pageToSlot.get(pageID);
-      pageToSlot.remove(pageID);
-      replacementPolicy.stateChanged(slotID, ReplacementPolicy.PageState.FREE);
-      diskManager.deallocatePage(page.getPageID());
+      if (page.getPinCount() != 1) { //
+         throw new IllegalArgumentException("Page must be pined exactly once when freePage() ist called"); //
+      } //
+      final PageID pageID = page.getPageID(); //
+      final int slotID = pageToSlot.get(pageID); //
+      pageToSlot.remove(pageID); //
+      replacementPolicy.stateChanged(slotID, ReplacementPolicy.PageState.FREE); //
+      diskManager.deallocatePage(page.getPageID()); //
    }
 
    @Override
