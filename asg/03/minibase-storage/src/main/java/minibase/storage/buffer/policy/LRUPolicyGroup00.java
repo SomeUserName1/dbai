@@ -10,22 +10,67 @@
  */
 package minibase.storage.buffer.policy;
 
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.Queue;
+import java.util.Set;
+
+/**
+ * A replacement policy that implements the <em>LRU</em> algorithm. The LRU policy
+ * evicts a free (whenever possible) or the least recently used memory page (buffer page).
+ *
+ * @author Simon Suckut, Fabian Klopfer
+ * @version 1.0
+ */
 public class LRUPolicyGroup00 implements ReplacementPolicy {
 
+   /** Queue of unpinned pages. */
+   private Queue<Integer> unpinnedQueue;
+   /** Set of free pages. */
+   private Set<Integer> freeSet;
+   
+   /**
+    * Constructs a LRU ReplacementPolicy.
+    * 
+    * @param numBuffers size of the buffer pool managed by this buffer policy
+    */
    public LRUPolicyGroup00(final int numBuffers) {
-      // TODO implement constructor
-      throw new UnsupportedOperationException("Not yet implemented.");
+      this.unpinnedQueue = new LinkedList<Integer>();
+      this.freeSet = new HashSet<Integer>(numBuffers);
+      for (int i = 0; i < numBuffers; i++) {
+         this.freeSet.add(i);
+      }
    }
 
    @Override
    public void stateChanged(final int pos, final PageState newState) {
-      // TODO implement method
-      throw new UnsupportedOperationException("Not yet implemented.");
+      
+      // Changes from FREE to UNPINNED are never needed so they are not covered by this method
+      switch (newState) {
+         case FREE:
+            this.unpinnedQueue.remove(pos);
+            this.freeSet.add(pos);
+            break;
+         case PINNED:
+            if (!this.freeSet.remove(pos)) {
+               this.unpinnedQueue.remove(pos);
+            }
+            break;
+         case UNPINNED:
+            this.unpinnedQueue.add(pos);
+            break;
+         default:
+            break;
+      }
    }
 
    @Override
    public int pickVictim() {
-      // TODO implement method
-      throw new UnsupportedOperationException("Not yet implemented.");
+      if (!this.freeSet.isEmpty()) {
+         return this.freeSet.iterator().next();
+      } else if (!this.unpinnedQueue.isEmpty()) {
+         return this.unpinnedQueue.peek();
+      }
+      return -1;
    }
 }
