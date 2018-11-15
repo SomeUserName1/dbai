@@ -66,10 +66,10 @@ public class ClockPolicyGroup00 implements ReplacementPolicy {
    @Override
    public int pickVictim() {
       
-      int numSkips = 0;
+      int rounds = 0;
       
       // stop after 2 rotations
-      while (numSkips < 2 * this.numBuffers) {
+      while (rounds < (2 * this.numBuffers)) {
          
          final int slot = this.current >> 3;
          final byte mask = (byte) (0x1 << (this.current & 0x7));
@@ -80,12 +80,14 @@ public class ClockPolicyGroup00 implements ReplacementPolicy {
             // return page if it is not referenced and dereference it
             if ((this.referenced[slot] & mask) == 0x0) {
                this.referenced[slot] &= ~mask;
-               return this.current++;
+               final int victim = this.current;
+               this.current = (this.current + 1) % this.numBuffers;
+               return victim;
             }
             this.referenced[slot] &= ~mask;
          }
          this.current = (this.current + 1) % this.numBuffers;
-         numSkips++;
+         rounds++;
       }
       return -1;
    }

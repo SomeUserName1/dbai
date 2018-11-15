@@ -23,14 +23,21 @@ public final class BufferManagerGroup00 implements BufferManager {
    private final ReplacementPolicy replacementPolicy;
    private Page< ? >[] bufferPages;
    private HashMap<PageID, Integer> pageToSlot;
+   private int numPagesPinned;
 
+   
+   @SuppressWarnings("rawtypes")
    public BufferManagerGroup00(final DiskManager diskManager, final int bufferPoolSize,
          final ReplacementStrategy replacementStrategy) {
       this.diskManager = diskManager;
       this.numBuffers = bufferPoolSize;
       this.replacementPolicy = replacementStrategy.newInstance(this.numBuffers);
       this.bufferPages = new Page< ? >[bufferPoolSize];
+      for (int i = 0; i < bufferPoolSize; i++) {
+         this.bufferPages[i] = new Page(i);
+      }
       this.pageToSlot = new HashMap<>();
+      this.numPagesPinned = 0;
    }
 
    @Override
@@ -56,6 +63,8 @@ public final class BufferManagerGroup00 implements BufferManager {
       final PageID pageID = page.getPageID(); //
       final int slotID = pageToSlot.get(pageID); //
       pageToSlot.remove(pageID); //
+      replacementPolicy.stateChanged(slotID, ReplacementPolicy.PageState.UNPINNED); //
+      numPagesPinned--; //
       replacementPolicy.stateChanged(slotID, ReplacementPolicy.PageState.FREE); //
       diskManager.deallocatePage(page.getPageID()); //
    }
@@ -68,10 +77,11 @@ public final class BufferManagerGroup00 implements BufferManager {
          final Page<T> page = (Page<T>) bufferPages[pageSlot];
          if(page.getPinCount() < 1) { //
             replacementPolicy.stateChanged(pageSlot, ReplacementPolicy.PageState.PINNED); //
+            this.numPagesPinned++; //
          } //
          page.incrementPinCount();
          return page;
-      } else if (this.getNumUnpinned() > 1) {
+      } else if (this.getNumUnpinned() > 0) {
          final int victimSlot = replacementPolicy.pickVictim();
          final Page<?> victimPage = bufferPages[victimSlot];
          pageToSlot.remove(victimPage.getPageID()); //
@@ -79,6 +89,7 @@ public final class BufferManagerGroup00 implements BufferManager {
          victimPage.reset(pageID);
          diskManager.readPage(pageID, victimPage.getData());
          replacementPolicy.stateChanged(victimSlot, ReplacementPolicy.PageState.PINNED);
+         this.numPagesPinned++;
          pageToSlot.put(pageID, victimSlot);
          victimPage.incrementPinCount();
          return (Page<T>) victimPage;
@@ -102,6 +113,7 @@ public final class BufferManagerGroup00 implements BufferManager {
       if (page.getPinCount() < 1) {
          final PageID pageID = page.getPageID();
          replacementPolicy.stateChanged(pageToSlot.get(pageID), ReplacementPolicy.PageState.UNPINNED);
+         this.numPagesPinned--;
          //pageToSlot.remove(pageID); 
       }
    }
@@ -130,7 +142,7 @@ public final class BufferManagerGroup00 implements BufferManager {
 
    @Override
    public int getNumPinned() {
-      return pageToSlot.size();
+      return this.numPagesPinned;
    }
 
    @Override
