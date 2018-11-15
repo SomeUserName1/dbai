@@ -67,6 +67,7 @@ public final class BufferManagerGroup00 implements BufferManager {
       numPagesPinned--; //
       replacementPolicy.stateChanged(slotID, ReplacementPolicy.PageState.FREE); //
       diskManager.deallocatePage(page.getPageID()); //
+      page.setDirty(false);
    }
 
    @Override
@@ -80,7 +81,7 @@ public final class BufferManagerGroup00 implements BufferManager {
             this.numPagesPinned++; //
          } //
          page.incrementPinCount();
-         return page;
+         return (Page<T>) page;
       } else if (this.getNumUnpinned() > 0) {
          final int victimSlot = replacementPolicy.pickVictim();
          final Page<?> victimPage = bufferPages[victimSlot];
