@@ -18,7 +18,7 @@ package minibase.storage.buffer.policy;
  * @author Simon Suckut, Fabian Klopfer
  * @version 1.0
  */
-public class ClockPolicyGroup00 implements ReplacementPolicy {
+public class ClockPolicyGroup05 implements ReplacementPolicy {
    
    /** Table of referenced pages. */
    private byte[] referenced;
@@ -34,7 +34,7 @@ public class ClockPolicyGroup00 implements ReplacementPolicy {
     * 
     * @param numBuffers size of the buffer pool managed by this buffer policy
     */
-   public ClockPolicyGroup00(final int numBuffers) {
+   public ClockPolicyGroup05(final int numBuffers) {
       final int numBytes = (numBuffers + 7) >> 3;
       this.referenced = new byte[numBytes];
       this.pinned = new byte[numBytes];

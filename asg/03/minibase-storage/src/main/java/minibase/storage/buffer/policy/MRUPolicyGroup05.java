@@ -10,8 +10,6 @@
  */
 package minibase.storage.buffer.policy;
 
-import java.util.HashSet;
-import java.util.Set;
 import java.util.Stack;
 
 /**
@@ -21,39 +19,32 @@ import java.util.Stack;
  * @author Simon Suckut, Fabian Klopfer
  * @version 1.0
  */
-public class MRUPolicyGroup00 implements ReplacementPolicy {
+public class MRUPolicyGroup05 implements ReplacementPolicy {
 
    /** Stack of unpinned pages. */
    private Stack<Integer> unpinnedStack;
-   /** Set of fee pages. */
-   private Set<Integer> freeSet;
 
    /**
     * Constructs a MRU ReplacementPolicy.
     * 
     * @param numBuffers size of the buffer pool managed by this buffer policy
     */
-   public MRUPolicyGroup00(final int numBuffers) {
+   public MRUPolicyGroup05(final int numBuffers) {
       this.unpinnedStack = new Stack<Integer>();
-      this.freeSet = new HashSet<Integer>(numBuffers);
       for (int i = 0; i < numBuffers; i++) {
-         this.freeSet.add(i);
+         this.unpinnedStack.push(i);
       }
    }
 
    @Override
    public void stateChanged(final int pos, final PageState newState) {
 
-      // Changes from FREE to UNPINNED are never needed so they are not covered by this method
       switch (newState) {
          case FREE:
-            this.unpinnedStack.remove((Integer) pos);
-            this.freeSet.add(pos);
+            // no need to update stack
             break;
          case PINNED:
-            if (!this.freeSet.remove(pos)) {
-               this.unpinnedStack.remove((Integer) pos);
-            }
+             this.unpinnedStack.remove((Integer) pos);
             break;
          case UNPINNED:
             this.unpinnedStack.add(pos);
@@ -65,9 +56,7 @@ public class MRUPolicyGroup00 implements ReplacementPolicy {
 
    @Override
    public int pickVictim() {
-      if (!this.freeSet.isEmpty()) {
-         return this.freeSet.iterator().next();
-      } else if (!this.unpinnedStack.isEmpty()) {
+      if (!this.unpinnedStack.isEmpty()) {
          return this.unpinnedStack.peek();
       }
       return -1;

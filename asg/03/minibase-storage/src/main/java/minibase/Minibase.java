@@ -16,7 +16,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 
 import minibase.storage.buffer.BufferManager;
-import minibase.storage.buffer.BufferManagerGroup00;
+import minibase.storage.buffer.BufferManagerGroup05;
 import minibase.storage.buffer.ReplacementStrategy;
 import minibase.storage.file.DiskFile;
 import minibase.storage.file.DiskManager;
@@ -72,7 +72,7 @@ public final class Minibase implements Closeable {
          // load the static layers
          final DiskManager diskManager = DiskManager.create(DiskFile.create(file, numPages));
          final BufferManager bufferManager =
-               new BufferManagerGroup00(diskManager, bufferPoolSize, replacementPolicy);
+               new BufferManagerGroup05(diskManager, bufferPoolSize, replacementPolicy);
          return new Minibase(diskManager.getDatabaseFile(), bufferManager);
       } catch (final Exception exc) {
          throw Minibase.haltSystem(exc);
@@ -100,7 +100,7 @@ public final class Minibase implements Closeable {
          temp.deleteOnExit();
          final DiskManager diskManager = DiskManager.create(DiskFile.create(temp, numPages));
          final BufferManager bufferManager =
-               new BufferManagerGroup00(diskManager, bufferPoolSize, replacementPolicy);
+               new BufferManagerGroup05(diskManager, bufferPoolSize, replacementPolicy);
          return new Minibase(diskManager.getDatabaseFile(), bufferManager);
       } catch (final Exception exc) {
          throw Minibase.haltSystem(exc);
@@ -125,7 +125,7 @@ public final class Minibase implements Closeable {
          final DiskFile diskFile = DiskFile.open(new File(dbFile));
          final DiskManager diskManager = DiskManager.open(diskFile);
          final BufferManager bufferManager =
-               new BufferManagerGroup00(diskManager, bufferPoolSize, replacementPolicy);
+               new BufferManagerGroup05(diskManager, bufferPoolSize, replacementPolicy);
          return new Minibase(diskManager.getDatabaseFile(), bufferManager);
       } catch (final Exception exc) {
          throw Minibase.haltSystem(exc);

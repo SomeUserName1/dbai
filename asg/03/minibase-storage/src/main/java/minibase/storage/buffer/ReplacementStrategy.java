@@ -10,9 +10,9 @@
  */
 package minibase.storage.buffer;
 
-import minibase.storage.buffer.policy.ClockPolicyGroup00;
-import minibase.storage.buffer.policy.LRUPolicyGroup00;
-import minibase.storage.buffer.policy.MRUPolicyGroup00;
+import minibase.storage.buffer.policy.ClockPolicyGroup05;
+import minibase.storage.buffer.policy.LRUPolicyGroup05;
+import minibase.storage.buffer.policy.MRUPolicyGroup05;
 import minibase.storage.buffer.policy.RandomPolicy;
 import minibase.storage.buffer.policy.ReplacementPolicy;
 
@@ -38,7 +38,7 @@ public enum ReplacementStrategy {
 
       @Override
       ReplacementPolicy newInstance(final int numBuffers) {
-         return new LRUPolicyGroup00(numBuffers);
+         return new LRUPolicyGroup05(numBuffers);
       }
    },
 
@@ -47,7 +47,7 @@ public enum ReplacementStrategy {
 
       @Override
       ReplacementPolicy newInstance(final int numBuffers) {
-         return new MRUPolicyGroup00(numBuffers);
+         return new MRUPolicyGroup05(numBuffers);
       }
    },
 
@@ -56,7 +56,7 @@ public enum ReplacementStrategy {
 
       @Override
       ReplacementPolicy newInstance(final int numBuffers) {
-         return new ClockPolicyGroup00(numBuffers);
+         return new ClockPolicyGroup05(numBuffers);
       }
    };
 
