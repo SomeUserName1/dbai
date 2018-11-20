@@ -1,5 +1,5 @@
 /*
- * @(#)BufferManagerGroup00.java   1.0   Nov 06, 2016
+ * @(#)BufferManagerGroup05.java   1.0   Nov 06, 2016
  *
  * Copyright (c) 1996-1997 University of Wisconsin.
  * Copyright (c) 2006 Purdue University.
@@ -10,11 +10,12 @@
  */
 package minibase.storage.buffer;
 
-import minibase.storage.buffer.policy.ReplacementPolicy;
-import minibase.storage.file.DiskManager;
-
 import java.util.Arrays;
 import java.util.HashMap;
+
+
+import minibase.storage.buffer.policy.ReplacementPolicy;
+import minibase.storage.file.DiskManager;
 
 /**
  * The BufferManager loads pages from the disk into memory and writes them back to disk when needed.
