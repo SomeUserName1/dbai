@@ -79,7 +79,6 @@ public class ClockPolicyGroup05 implements ReplacementPolicy {
             
             // return page if it is not referenced and dereference it
             if ((this.referenced[slot] & mask) == 0x0) {
-
                final int victim = this.current;
                this.current = (this.current + 1) % this.numBuffers;
                return victim;
