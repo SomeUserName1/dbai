@@ -15,7 +15,6 @@ public final class BTreeGroup05 extends AbstractBTree {
         int[] searchPath = this.searchLeaf(nodeID, key);
         Node mNode = this.getNode(searchPath[searchPath.length - 1]);
 
-        System.out.println("Search path: " + Arrays.toString(searchPath));
 
         /* loop over the keys in the child and return true if it's present */
         for (int leaf_key : mNode.getKeys()) if (key == leaf_key) return true;
@@ -33,7 +32,6 @@ public final class BTreeGroup05 extends AbstractBTree {
         /* if the key is present skip the insertion according to the exercise description */
         if (this.containsKey(nodeID, key)) return NO_CHANGES;
 
-        //System.out.println(Arrays.toString(mNode.getKeys()) + "Size: " + nodeSize);
 
         /* if there is space left ... */
         if (nodeSize < this.getMaxSize()) {
@@ -44,6 +42,7 @@ public final class BTreeGroup05 extends AbstractBTree {
 
         } else { /* Split the child */
             // TODO Check neighbours and redistribute up to d nodes
+
             int[] splitKeys = mNode.getKeys();
             int newNodeID = this.createNode(true);
             Node newNode = this.getNode(newNodeID);
@@ -51,7 +50,10 @@ public final class BTreeGroup05 extends AbstractBTree {
             int insertPosition = nodeSize;
 
             for (int i = 0; i < nodeSize; ++i) {
-                if (key < splitKeys[i]) insertPosition = i;
+                if (key < splitKeys[i]) {
+                    insertPosition = i;
+                    break;
+                }
             }
 
             /* copy the upper part over */
@@ -61,18 +63,18 @@ public final class BTreeGroup05 extends AbstractBTree {
             System.arraycopy(new int[splitNodeSize], 0, splitKeys, this.getMinSize(),
                     splitNodeSize);
 
-            if (insertPosition < this.getMinSize() - 1) {
+            newNode.setSize(splitNodeSize);
+            mNode.setSize(this.getMinSize());
+
+            if (insertPosition < this.getMinSize()) {
                 insert(mNodeID, key);
             } else {
                 insert(newNodeID, key);
             }
-            /* Adjust the sizes accordingly TODO size mess up maybe here*/
-            newNode.setSize(splitNodeSize);
-            mNode.setSize(this.getMinSize()); /* parentSize-(parentSize - this.getMinSize()) == this.getMinSize() */
+            incrementSize();
 
             if (mNodeID == this.getRoot()) {
                 return keyIDPair(newNode.getKey(0), newNodeID);
-
             }
 
             return propagateSplit(searchPath, newNodeID);
@@ -101,13 +103,14 @@ public final class BTreeGroup05 extends AbstractBTree {
         int nodeSize = mNode.getSize();
         int[] leaf_keys = mNode.getKeys();
 
-        //System.out.println(Arrays.toString(leaf_keys) + "Size: " + nodeSize);
         if (nodeSize == 0) {
             mNode.setKey(nodeSize,key);
             mNode.setSize(nodeSize + 1);
         } else if (key > mNode.getKey(nodeSize-1)) {
-            mNode.setKey(nodeSize, key);
+            System.out.println(mNode.getKey(nodeSize-1));
+            System.out.println(mNode.toString());
             mNode.setSize(nodeSize + 1);
+            mNode.setKey(nodeSize, key);
         } else { /* else look for the next larger key and insert */
             for (int i = 0; i < nodeSize; ++i) {
                 if (key < leaf_keys[i]) {
@@ -137,9 +140,7 @@ public final class BTreeGroup05 extends AbstractBTree {
             /*  check weather it is larger than the largest key of the current node.*/
             /* If so the location of the desired node must be in the subtree that the */
             /* last child is pointing to */
-//            if (key >= mNode.getKey(mNode.getSize() - 1)) {
-//
-//            }
+
             /* else check the other keys and find the next larger one */
             int i = 0;
             for (int node_key : mNode.getKeys()) {
@@ -181,6 +182,7 @@ public final class BTreeGroup05 extends AbstractBTree {
             for (int i = 0; i < parentSize; ++i) {
                 if (insertKey < parentKeys[i]) insertPosition = i;
             }
+            System.out.println(insertPosition + " key " + insertKey);
 
             if (insertPosition == middle) {
                 /* no shifting necessary as the new value is the mid key */
@@ -224,7 +226,7 @@ public final class BTreeGroup05 extends AbstractBTree {
                 parentChildren[parentSize] = newNodeID;
             }
 
-            /* do the split TODO size mess up maybe here? */
+            /* do the split  */
             int splitNodeID = this.createNode(false);
             Node splitNode = this.getNode(splitNodeID);
             int splitNodeSize = parentSize - this.getMinSize();
@@ -246,10 +248,11 @@ public final class BTreeGroup05 extends AbstractBTree {
             return propagateSplit(Arrays.copyOf(searchPath, searchPath.length - 1), splitNodeID);
 
         } else { /* parent has free space, adjust the key and ID to the first element in the new node */
-            /* and its ID respectively */
+            /* and its ID respectively TODO messup here*/
             for (int i = 0; i < parentSize; ++i) {
                 if (insertKey < parentKeys[i]) insertPosition = i;
             }
+            System.out.println(insertPosition + " key " + insertKey);
             insert(parentID, this.getNode(newNodeID).getKey(0));
 
             System.arraycopy(parentChildren, insertPosition + 1, parentChildren, insertPosition + 2,

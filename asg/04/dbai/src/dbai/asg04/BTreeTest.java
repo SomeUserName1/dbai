@@ -38,7 +38,7 @@ public final class BTreeTest {
    @Test
    public void testFillEmpty() {
       final Random rng = new Random(42);
-      final int n = 200_000_000;
+      final int n = 200;
       final int[] rand = new int[n];
       for (int i = 0; i < rand.length; i++) {
          rand[i] = rng.nextInt(n) + 1;

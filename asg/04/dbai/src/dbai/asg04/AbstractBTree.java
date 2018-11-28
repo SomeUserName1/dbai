@@ -82,7 +82,6 @@ abstract class AbstractBTree {
       if (res != NO_CHANGES) {
          // the root node was split, create a new inner node and make it the root node
          // this is the only case in which the height of the tree increases
-          System.out.println("Do we even split the root?");
          final int rootID = this.createNode(false);
          final Node rootNode = this.getNode(rootID);
          rootNode.setChildID(0, this.root);
