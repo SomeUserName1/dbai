@@ -1,9 +1,6 @@
 package dbai.asg04;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Main memory based B+ Tree implementation.
@@ -42,6 +39,27 @@ abstract class AbstractBTree {
       this.setRoot(this.createNode(true));
    }
 
+   private void printChildren(int nodeID) {
+      Node node = this.getNode(nodeID);
+      int[] childIDs = node.getChildren() == null ? new int[]{-1} : node.getChildren();
+      System.out.println("NodeID: " + nodeID + "| Size: " + node.getSize() + "| childIDs" + Arrays.toString(childIDs) );
+
+      int[] children = node.getChildren();
+      if(children == null) return;
+      for(int childNodeID : children) {
+          if (childNodeID == -1) return;
+         printChildren(childNodeID);
+
+      }
+   }
+
+   public void printChildren() {
+      int rootID = this.getRoot();
+      System.out.println("Root Node ID: " + rootID);
+      printChildren(rootID);
+   }
+
+
    /**
     * Checks if the specified key exists in the tree.
     * 
@@ -64,6 +82,7 @@ abstract class AbstractBTree {
       if (res != NO_CHANGES) {
          // the root node was split, create a new inner node and make it the root node
          // this is the only case in which the height of the tree increases
+          System.out.println("Do we even split the root?");
          final int rootID = this.createNode(false);
          final Node rootNode = this.getNode(rootID);
          rootNode.setChildID(0, this.root);

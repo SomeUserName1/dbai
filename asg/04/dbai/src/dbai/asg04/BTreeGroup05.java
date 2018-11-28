@@ -2,12 +2,13 @@ package dbai.asg04;
 
 import java.util.Arrays;
 
-/* spaghetti code; TODO size is messed up somewhere */
+/* spaghetti code; size bugged, maybe more */
 
 public final class BTreeGroup05 extends AbstractBTree {
     public BTreeGroup05(final int d) {
         super(d);
     }
+
 
     @Override
     protected boolean containsKey(final int nodeID, final int key) {
@@ -24,21 +25,22 @@ public final class BTreeGroup05 extends AbstractBTree {
     protected long insertKey(final int nodeID, final int key) {
         int[] searchPath = searchLeaf(nodeID, key);
         int mNodeID = searchPath[searchPath.length - 1];
+
         Node mNode = this.getNode(mNodeID);
         int nodeSize = mNode.getSize();
         /* if the key is present skip the insertion according to the exercise description */
         if (this.containsKey(nodeID, key)) return NO_CHANGES;
 
-        System.out.println(Arrays.toString(mNode.getKeys()) + "Size: " + nodeSize);
+        //System.out.println(Arrays.toString(mNode.getKeys()) + "Size: " + nodeSize);
 
         /* if there is space left ... */
         if (nodeSize < this.getMaxSize()) {
             /* and the key is larger than the current largest key in the node append the key */
             insert(mNodeID, key);
+            incrementSize();
             return NO_CHANGES;
 
         } else { /* Split the child */
-
             // TODO Check neighbours and redistribute up to d nodes
             int[] splitKeys = mNode.getKeys();
             int newNodeID = this.createNode(true);
@@ -62,13 +64,14 @@ public final class BTreeGroup05 extends AbstractBTree {
             } else {
                 insert(newNodeID, key);
             }
-
-            /* Adjust the sizes accordingly */
+            /* Adjust the sizes accordingly TODO size mess up maybe here*/
             newNode.setSize(splitNodeSize);
             mNode.setSize(this.getMinSize()); /* parentSize-(parentSize - this.getMinSize()) == this.getMinSize() */
 
-            if (mNodeID == this.getRoot())
+            if (mNodeID == this.getRoot()) {
                 return keyIDPair(newNode.getKey(0), newNodeID);
+
+            }
 
             return propagateSplit(searchPath, newNodeID);
         }
@@ -96,15 +99,13 @@ public final class BTreeGroup05 extends AbstractBTree {
         int nodeSize = mNode.getSize();
         int[] leaf_keys = mNode.getKeys();
 
-        System.out.println(Arrays.toString(leaf_keys) + "Size: " + nodeSize);
+        //System.out.println(Arrays.toString(leaf_keys) + "Size: " + nodeSize);
         if (nodeSize == 0) {
             mNode.setKey(nodeSize,key);
             mNode.setSize(nodeSize + 1);
-            incrementSize();
         } else if (key > mNode.getKey(nodeSize-1)) {
-            mNode.setKey(nodeSize-1, key);
+            mNode.setKey(nodeSize, key);
             mNode.setSize(nodeSize + 1);
-            incrementSize();
         } else { /* else look for the next larger key and insert */
             for (int i = 0; i < nodeSize; ++i) {
                 if (key < leaf_keys[i]) {
@@ -113,7 +114,6 @@ public final class BTreeGroup05 extends AbstractBTree {
                     /* insert the key */
                     mNode.setKey(i, key);
                     mNode.setSize(nodeSize + 1);
-                    incrementSize();
                     return;
                 }
             }
@@ -221,7 +221,7 @@ public final class BTreeGroup05 extends AbstractBTree {
                 parentChildren[parentSize] = newNodeID;
             }
 
-            /* do the split */
+            /* do the split TODO size mess up maybe here? */
             int splitNodeID = this.createNode(false);
             Node splitNode = this.getNode(splitNodeID);
             int splitNodeSize = parentSize - this.getMinSize();
