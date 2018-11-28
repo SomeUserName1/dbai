@@ -28,7 +28,7 @@ public final class BTreeTest {
    @BeforeEach
    public void buildUp() {
       // TODO you can experiment with the node size and/or write additional test methods
-      this.tree = new BTreeGroup05(4);
+      this.tree = new BTreeGroup05(2);
       this.cmp.clear();
    }
 
