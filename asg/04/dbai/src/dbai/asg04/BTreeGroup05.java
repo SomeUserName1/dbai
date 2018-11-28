@@ -15,6 +15,8 @@ public final class BTreeGroup05 extends AbstractBTree {
         int[] searchPath = this.searchLeaf(nodeID, key);
         Node mNode = this.getNode(searchPath[searchPath.length - 1]);
 
+        System.out.println("Search path: " + Arrays.toString(searchPath));
+
         /* loop over the keys in the child and return true if it's present */
         for (int leaf_key : mNode.getKeys()) if (key == leaf_key) return true;
         /* if we looped over all keys but didnt find anything, the key is not present */
@@ -135,19 +137,20 @@ public final class BTreeGroup05 extends AbstractBTree {
             /*  check weather it is larger than the largest key of the current node.*/
             /* If so the location of the desired node must be in the subtree that the */
             /* last child is pointing to */
-            if (key >= mNode.getKey(mNode.getSize() - 1)) {
-                return concat(new int[]{nodeID}, this.searchLeaf(mNode.getChildID(mNode.getSize()), key));
-            }
+//            if (key >= mNode.getKey(mNode.getSize() - 1)) {
+//
+//            }
             /* else check the other keys and find the next larger one */
+            int i = 0;
             for (int node_key : mNode.getKeys()) {
-                /* check if key can be found in left childrens */
+                /* check if key can be found in left children */
                 if (key < node_key) {
-                    return concat(new int[]{nodeID}, this.searchLeaf(mNode.getChildID(mNode.getSize()), key));
+                    return concat(new int[]{nodeID}, this.searchLeaf(mNode.getChildID(i), key));
                 }
+                i++;
             }
+            return concat(new int[]{nodeID}, this.searchLeaf(mNode.getChildID(mNode.getSize()), key));
         }
-        /* unreachable */
-        return new int[0];
     }
 
 
