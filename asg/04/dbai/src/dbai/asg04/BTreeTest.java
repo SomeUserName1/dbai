@@ -1,14 +1,12 @@
 package dbai.asg04;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.BitSet;
 import java.util.Random;
 
-import org.junit.Before;
-import org.junit.Test;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * This class tests the BTreeGroup00 implementation.
@@ -27,10 +25,10 @@ public final class BTreeTest {
    private BitSet cmp = new BitSet();
 
    /** Resets BTreeGroup00 and BitSet. */
-   @Before
+   @BeforeEach
    public void buildUp() {
       // TODO you can experiment with the node size and/or write additional test methods
-      this.tree = new BTreeGroup00(4);
+      this.tree = new BTreeGroup05(4);
       this.cmp.clear();
    }
 
@@ -85,7 +83,7 @@ public final class BTreeTest {
             // insert value
             this.cmp.set(rnd);
             this.tree.insert(key);
-            assertTrue("insertion of " + key + " failed", this.tree.contains(key));
+            assertTrue(this.tree.contains(key), "insertion of " + key + " failed");
          } else if (nextOp == 1) {
             // random key lookup
             assertEquals(this.cmp.get(rnd), this.tree.contains(key));
@@ -93,7 +91,7 @@ public final class BTreeTest {
             // delete key
             this.cmp.clear(rnd);
             this.tree.delete(key);
-            assertFalse("deletion of " + key + " failed", this.tree.contains(key));
+            assertFalse(this.tree.contains(key), "deletion of " + key + " failed");
             assertEquals(this.cmp.cardinality(), this.tree.size());
          }
       }
