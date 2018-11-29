@@ -112,9 +112,7 @@ public final class BTreeGroup05 extends AbstractBTree {
 		if (nodeSize == 0) {
 			mNode.setKey(nodeSize, key);
 			mNode.setSize(nodeSize + 1);
-		} else if (key > mNode.getKey(nodeSize - 1)) {
-			System.out.println(mNode.getKey(nodeSize - 1));
-			System.out.println(mNode.toString());
+		} else if (key > mNode.getKey(nodeSize - 1)) {;
 			mNode.setSize(nodeSize + 1);
 			mNode.setKey(nodeSize, key);
 			if (!mNode.isLeaf()) {
@@ -132,9 +130,7 @@ public final class BTreeGroup05 extends AbstractBTree {
 					/* insert the key */
 					mNode.setKey(i, key);
 					mNode.setSize(nodeSize + 1);
-					
-					System.out.println(mNode.toString());
-					
+				
 					return;
 				}
 			}
