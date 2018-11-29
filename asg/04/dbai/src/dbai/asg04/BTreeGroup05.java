@@ -126,11 +126,15 @@ public final class BTreeGroup05 extends AbstractBTree {
 					/* shift all other keys to the right */
 					System.arraycopy(keys, i, keys, i + 1, nodeSize - i);
 					if (!mNode.isLeaf()) {
-						System.arraycopy(children, i, children, i + 1, nodeSize - i + 1);
+						System.arraycopy(children, i + 1, children, i + 2, nodeSize - i);
+						children[i + 1] = childID;
 					}
 					/* insert the key */
 					mNode.setKey(i, key);
 					mNode.setSize(nodeSize + 1);
+					
+					System.out.println(mNode.toString());
+					
 					return;
 				}
 			}
@@ -197,7 +201,7 @@ public final class BTreeGroup05 extends AbstractBTree {
 			 * if insertPosition doesn't change after the following for-loop it's the
 			 * largest element
 			 */
-			int middle = this.getMaxSize();
+			int middle = this.getMinSize();
 
 			for (int i = 0; i < parentSize; ++i) {
 				if (key < parentKeys[i]) {
@@ -266,11 +270,7 @@ public final class BTreeGroup05 extends AbstractBTree {
 				}
 			}
 			System.out.println(insertPosition + " key " + key);
-			insert(parentID, this.getNode(newNodeID).getKey(0), -1);
-
-			System.arraycopy(parentChildren, insertPosition, parentChildren, insertPosition + 1,
-					parentSize - insertPosition);
-			parent.setChildID(insertPosition, newNodeID);
+			insert(parentID, this.getNode(newNodeID).getKey(0), newNodeID);
 
 			return NO_CHANGES; /* TERMINATION CONDITION */
 		}
