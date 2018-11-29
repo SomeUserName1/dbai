@@ -180,7 +180,10 @@ public final class BTreeGroup05 extends AbstractBTree {
             int middle = (parentSize + 1) / 2;
 
             for (int i = 0; i < parentSize; ++i) {
-                if (insertKey < parentKeys[i]) insertPosition = i;
+                if (insertKey < parentKeys[i]) {
+                    insertPosition = i;
+                    break;
+                }
             }
             System.out.println(insertPosition + " key " + insertKey);
 
@@ -250,7 +253,10 @@ public final class BTreeGroup05 extends AbstractBTree {
         } else { /* parent has free space, adjust the key and ID to the first element in the new node */
             /* and its ID respectively TODO messup here*/
             for (int i = 0; i < parentSize; ++i) {
-                if (insertKey < parentKeys[i]) insertPosition = i;
+                if (insertKey < parentKeys[i]) {
+                    insertPosition = i;
+                    break;
+                }
             }
             System.out.println(insertPosition + " key " + insertKey);
             insert(parentID, this.getNode(newNodeID).getKey(0));
