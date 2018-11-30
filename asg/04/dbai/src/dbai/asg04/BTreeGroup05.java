@@ -370,7 +370,18 @@ public final class BTreeGroup05 extends AbstractBTree {
 		
 			if (left) {
 				
+				System.arraycopy(keys, 0, neighbourKeys, neighbour.getSize() + 1, this.getMinSize() -1);
+				neighbourKeys[neighbour.getSize()] = parentKeys[childPos];
 				
+				if (!node.isLeaf()) {
+					System.arraycopy(children, 0, neighbourChildren, neighbour.getSize(), this.getMinSize());
+				}
+				
+				System.arraycopy(parentKeys, childPos, parentKeys, childPos - 1, parent.getSize() - childPos -1);
+				System.arraycopy(parentChildren, childPos, parentChildren, childPos - 1, parent.getSize() -childPos);
+				parent.setSize(parent.getSize() -1);
+				parent.setChildID(parent.getSize(), -1);
+				parent.setKey(parent.getSize(), 0);
 			
 			} else {
 			
@@ -380,6 +391,8 @@ public final class BTreeGroup05 extends AbstractBTree {
 				System.arraycopy(parentKeys, childPos + 1, parentKeys, childPos, parent.getSize() - childPos -1);
 				System.arraycopy(parentChildren, childPos + 1, parentChildren, childPos, parent.getSize() -childPos);
 				parent.setSize(parent.getSize() -1);
+				parent.setChildID(parent.getSize(), -1);
+				parent.setKey(parent.getSize(), 0);
 				
 				if (!node.isLeaf()) {
 					System.arraycopy(children, this.getMinSize(), neighbourChildren, 0, neighbour.getSize() + 1);
