@@ -24,7 +24,19 @@
 \usepackage{multicol}
 \usepackage{float}
 
+\usetikzlibrary{shapes.multipart}
+
 \setlength{\headheight}{24pt}
+
+\newcommand{\bnode}[6]
+{
+	\node (#1) at (#6) [bfour] { \nodepart[text width=0.01cm]{one} \nodepart[text width=0.4cm]{two} #2 \nodepart[text width=0.01cm]{three} \nodepart[text width=0.4cm]{four} #3 \nodepart[text width=0.01cm]{five} \nodepart[text width=0.4cm]{six} #4 \nodepart[text width=0.01cm]{seven} \nodepart[text width=0.4cm]{eight} #5 \nodepart[text width=0.01cm]{nine}}
+}
+
+\newcommand{\bleaf}[6]
+{
+	\node (#1) at (#6) [bleaf] { \nodepart[text width=0.4cm]{one} #2 \nodepart[text width=0.4cm]{two} #3 \nodepart[text width=0.4cm]{three} #4 \nodepart[text width=0.4cm]{four} #5}
+}
 
 \pagestyle{fancy}
 \lhead{Fabian Klopfer (956507)|Simon Suckut (TODO)}
@@ -35,15 +47,133 @@
 	\section*{Exercise 1: }\label{sec:exercise1}
    \begin{enumerate}[a.]
 		\item 
+		\begin{tikzpicture}[scale=0.6, transform shape, baseline]
+		
+		\tikzstyle{every node}=[font=\small, inner sep = 0.05cm]
+		
+		\tikzstyle{bfour}=[color=black, rectangle split, rectangle split horizontal,rectangle split parts=9,draw,
+		rectangle split every empty part={}scale=2, transform shape,
+		rectangle split empty part width=0.1cm,]
+		
+		\tikzstyle{bleaf}=[color=black, rectangle split, rectangle split horizontal,rectangle split parts=4,draw,
+		rectangle split every empty part={}scale=2, transform shape,
+		rectangle split empty part width=0.1cm,]
+		
+		\bnode {n1} {14}{}{}{} {0, 0};
+		\bnode {n2} {5}{8}{}{} {-4, -1.5};
+		\bnode {n3} {18}{23}{25}{64} {4, -1.5};
+		
+		\bleaf {l1} {1*}{2*}{}{} {-9.5, -3};
+		\bleaf {l2} {5*}{6*}{}{} {-6.5, -3};
+		\bleaf {l3} {8*}{9*}{10*}{11*} {-3.5, -3};
+		\bleaf {l4} {14*}{15*}{16*}{17*} {-0.5, -3};
+		\bleaf {l5} {18*}{20*}{21*}{} {2.5, -3};
+		\bleaf {l6} {23*}{24*}{}{} {5.5, -3};
+		\bleaf {l7} {30*}{40*}{}{} {8.5, -3};
+		\bleaf {l8} {64*}{80*}{99*}{} {11.5, -3};
+		
+		\draw [->] (n1.one south) to (n2);
+		\draw [->] (n1.three south) to (n3);
+		\draw [->] (n2.one south) to (l1);
+		\draw [->] (n2.three south) to (l2);
+		\draw [->] (n2.five south) to (l3);
+		
+		\draw [->] (n3.one south) to (l4);
+		\draw [->] (n3.three south) to (l5);
+		\draw [->] (n3.five south) to (l6);
+		\draw [->] (n3.seven south) to (l7);
+		\draw [->] (n3.nine south) to (l8);
+		
+		\end{tikzpicture}
+        
         \item
-        \item
+        
+        \begin{tikzpicture}[scale=0.6, transform shape, baseline]
+        
+        \tikzstyle{every node}=[font=\small, inner sep = 0.05cm]
+        
+        \tikzstyle{bfour}=[color=black, rectangle split, rectangle split horizontal,rectangle split parts=9,draw,
+        rectangle split every empty part={}scale=2, transform shape,
+        rectangle split empty part width=0.1cm,]
+        
+        \tikzstyle{bleaf}=[color=black, rectangle split, rectangle split horizontal,rectangle split parts=4,draw,
+        rectangle split every empty part={}scale=2, transform shape,
+        rectangle split empty part width=0.1cm,]
+        
+        \bnode {n1} {14}{23}{}{} {0, 0};
+        \bnode {n2} {5}{8}{}{} {-4, -1.5};
+        \bnode {n3} {16}{20}{}{} {4, -1.5};
+        \bnode {n4} {25}{64}{}{} {8, -1.5};
+        
+        \bleaf {l1} {1*}{2*}{}{} {-9.5, -3};
+        \bleaf {l2} {5*}{6*}{}{} {-6.5, -3};
+        \bleaf {l3} {8*}{9*}{10*}{11*} {-3.5, -3};
+        \bleaf {l4} {14*}{15*}{}{} {-0.5, -3};
+        \bleaf {l5} {16*}{17*}{18*}{} {2.5, -3};
+        \bleaf {l6} {20*}{21*}{}{} {5.5, -3};
+        \bleaf {l7} {23*}{24*}{}{} {8.5, -3};
+        \bleaf {l8} {30*}{40*}{}{} {11.5, -3};
+        \bleaf {l9} {64*}{80*}{99*}{} {14.5, -3};
+        
+        \draw [->] (n1.one south) to (n2);
+        \draw [->] (n1.three south) to (n3);
+        \draw [->] (n1.five south) to (n4);
+        \draw [->] (n2.one south) to (l1);
+        \draw [->] (n2.three south) to (l2);
+        \draw [->] (n2.five south) to (l3);
+        
+        \draw [->] (n3.one south) to (l4);
+        \draw [->] (n3.three south) to (l5);
+        \draw [->] (n3.five south) to (l6);
+        \draw [->] (n4.one south) to (l7);
+        \draw [->] (n4.three south) to (l8);
+        \draw [->] (n4.five south) to (l9);
+        
+        \end{tikzpicture}
+        
+        \item 
+        \begin{tikzpicture}[scale=0.6, transform shape, baseline]
+        
+        \tikzstyle{every node}=[font=\small, inner sep = 0.05cm]
+        
+        \tikzstyle{bfour}=[color=black, rectangle split, rectangle split horizontal,rectangle split parts=9,draw,
+        rectangle split every empty part={}scale=2, transform shape,
+        rectangle split empty part width=0.1cm,]
+        
+        \tikzstyle{bleaf}=[color=black, rectangle split, rectangle split horizontal,rectangle split parts=4,draw,
+        rectangle split every empty part={}scale=2, transform shape,
+        rectangle split empty part width=0.1cm,]
+        
+        \bnode {n1} {17}{}{}{} {2, 0};
+        \bnode {n2} {8}{14}{}{} {-2, -1.5};
+        \bnode {n3} {23}{25}{64}{} {6, -1.5};
+        
+        \bleaf {l2} {2*}{5*}{6*}{} {-6.5, -3};
+        \bleaf {l3} {8*}{9*}{10*}{11*} {-3.5, -3};
+        \bleaf {l4} {14*}{16*}{17*}{18*} {-0.5, -3};
+        \bleaf {l5} {20*}{21*}{}{} {2.5, -3};
+        \bleaf {l6} {23*}{24*}{}{} {5.5, -3};
+        \bleaf {l7} {30*}{40*}{}{} {8.5, -3};
+        \bleaf {l8} {64*}{80*}{99*}{} {11.5, -3};
+        
+        \draw [->] (n1.one south) to (n2);
+        \draw [->] (n1.three south) to (n3);
+        
+        \draw [->] (n2.one south) to (l2);
+        \draw [->] (n2.three south) to (l3);
+        \draw [->] (n2.five south) to (l4);
+        
+        \draw [->] (n3.one south) to (l5);
+        \draw [->] (n3.three south) to (l6);
+        \draw [->] (n3.five south) to (l7);
+        \draw [->] (n3.seven south) to (l8);
+        
+        \end{tikzpicture}
+        
    \end{enumerate}
 
 	\section*{Exercise 2: }\label{sec:exercise2}
-        \begin{enumerate}[a.]
-            \item
-            \item
-        \end{enumerate}
+        At 
 
 
 	\section*{Exercise 3: }\label{sec:exercise3}
