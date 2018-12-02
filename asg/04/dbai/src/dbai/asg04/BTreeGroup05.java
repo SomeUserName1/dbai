@@ -64,10 +64,6 @@ public final class BTreeGroup05 extends AbstractBTree {
 			/* copy the upper part over */
 			System.arraycopy(splitKeys, this.getMinSize(), newNode.getKeys(), 0, splitNodeSize);
 
-			// Unnötig, da Werte mit index >= size ignoriert werden
-			// System.arraycopy(new int[splitNodeSize], 0, splitKeys, this.getMinSize(),
-			// splitNodeSize);
-
 			newNode.setSize(splitNodeSize);
 			mNode.setSize(this.getMinSize());
 
@@ -130,7 +126,7 @@ public final class BTreeGroup05 extends AbstractBTree {
 					/* insert the key */
 					mNode.setKey(i, key);
 					mNode.setSize(nodeSize + 1);
-				
+
 					return;
 				}
 			}
@@ -182,12 +178,12 @@ public final class BTreeGroup05 extends AbstractBTree {
 		 * get parent node of the leaf. the leaf is at searchPath[searchPath.length-1],
 		 * so the parent is at len-2
 		 */
+		System.out.println("search path: " + Arrays.toString(searchPath) + "| RootID: " + this.getRoot());
 		int parentID = searchPath[searchPath.length - 2];
 		Node parent = this.getNode(parentID);
 		int parentSize = parent.getSize();
 		int parentKeys[] = parent.getKeys();
-		int parentChildren[] = parent.getChildren();
-		
+
 		int insertPosition = parentSize;
 
 		/* if there is no free space left */
@@ -208,53 +204,54 @@ public final class BTreeGroup05 extends AbstractBTree {
 
 			int splitNodeID = createNode(false);
 			Node splitNode = getNode(splitNodeID);
-			
+
 
 			if (insertPosition < middle) {
 
 				// new Child is inserted into left Node
-				
+
 				// assemble right Node
 				System.arraycopy(parent.getKeys(), middle, splitNode.getKeys(), 0, this.getMinSize());
 				System.arraycopy(parent.getChildren(), middle, splitNode.getChildren(), 0, this.getMinSize() + 1);
-				
+
 				Arrays.fill(parent.getKeys(), middle, this.getMaxSize() - 1, 0);
 				Arrays.fill(parent.getChildren(), middle, this.getMaxSize(), -1);
-				
+
 				parent.setSize(this.getMinSize());
 				insert(parentID, key, newNodeID);
-				
+
 				parent.setSize(this.getMinSize());
 				splitNode.setSize(this.getMinSize());
-				
+
 			} else {
-				
+
 				// new Child is inserted into right Node
-				
+
 				System.arraycopy(parent.getKeys(), middle + 1, splitNode.getKeys(), 0, this.getMinSize() -1);
 				System.arraycopy(parent.getChildren(), middle + 1, splitNode.getChildren(), 0, this.getMinSize());
-				
+
 				Arrays.fill(parent.getKeys(), middle + 1, this.getMaxSize() -1, 0);
 				Arrays.fill(parent.getChildren(), middle + 1, this.getMaxSize(), -1);
-				
+
 				parent.setSize(this.getMinSize());
 				splitNode.setSize(this.getMinSize() -1);
-				
+
 				insert(splitNodeID, key, newNodeID);
-				
+
 			}
-			
+
 			int middleKey = parent.getKey(middle);
 			parent.getKeys()[middle] = 0;
-			
-			if (parentID == getRoot()) {
-				return keyIDPair(splitNode.getKey(0), splitNodeID);
-			}
-			
-			return propagateSplit(Arrays.copyOfRange(searchPath, 0, searchPath.length -2), splitNodeID, middleKey);
 
-		} else { 
-			
+			System.out.println("ParentID: " + parentID);
+			if (parentID == getRoot()) {
+				return keyIDPair(middleKey, splitNodeID);
+			}
+
+			return propagateSplit(Arrays.copyOfRange(searchPath, 0, searchPath.length -1), splitNodeID, middleKey);
+
+		} else {
+
 			/*
 			 * 		 * parent has free space, adjust the key and ID to the first element in the new
 			 * 	 * node	 */
@@ -273,18 +270,18 @@ public final class BTreeGroup05 extends AbstractBTree {
 	}
 
 	private long propagateMerge(int[] searchPath) {
-		
+
 		int nodeID = searchPath[searchPath.length -1];
 		int parentID = searchPath[searchPath.length -2];
 		Node parent = getNode(parentID);
-		
+
 		Node node = getNode(nodeID);
 		int keys[] = node.getKeys();
 		int children[] = node.getChildren();
-		
+
 		int parentChildren[] = parent.getChildren();
 		int parentKeys[] = parent.getKeys();
-		
+
 		int childPos = 0;
 		for (int i = 0; i <= parent.getSize(); i++) {
 			if (parentChildren[i] == nodeID) {
@@ -292,34 +289,34 @@ public final class BTreeGroup05 extends AbstractBTree {
 				break;
 			}
 		}
-		
+
 		int neighbourID;
-		
+
 		boolean left = false;
-		
+
 		if(childPos == 0) {
 			neighbourID = parentChildren[1];
 		} else  if (childPos == parent.getSize()) {
 			neighbourID = parent.getSize() - 1;
 		} else {
-			if (getNode(parentChildren[childPos - 1]).getSize() > 
+			if (getNode(parentChildren[childPos - 1]).getSize() >
 				getNode(parentChildren[childPos + 1]).getSize()) {
-				
+
 				neighbourID = childPos + 1;
 			} else {
 				neighbourID = childPos - 1;
 				left = true;
 			}
 		}
-		
+
 		Node neighbour = getNode(neighbourID);
 		int neighbourKeys[] = neighbour.getKeys();
 		int neighbourChildren[] = neighbour.getChildren();
-		
+
 		// do redistribution
 		if (neighbour.getSize() > this.getMinSize()) {
 			if (left) {
-				
+
 				int stolenKey = neighbourKeys[neighbour.getSize() -1];
 				int stolenChild = -1;
 				if(!neighbour.isLeaf()) {
@@ -327,20 +324,20 @@ public final class BTreeGroup05 extends AbstractBTree {
 					neighbourChildren[neighbour.getSize()] = -1;
 				}
 				neighbour.setSize(neighbour.getSize() -1);
-				
+
 				System.arraycopy(keys, 0, keys, 1, this.getMinSize() -1);
 				keys[0] = stolenKey;
 				if (!node.isLeaf()) {
 					System.arraycopy(children, 0, children, 1, this.getMinSize());
 					children[0] = stolenChild;
 				}
-				
+
 				node.setSize(this.getMinSize());
-				
+
 				parentKeys[childPos] = stolenKey;
-				
+
 			} else {
-				
+
 				int stolenKey = neighbourKeys[0];
 				System.arraycopy(neighbourKeys, 1, neighbourKeys, 0, neighbour.getSize() -1);
 				int stolenChild = -1;
@@ -349,63 +346,63 @@ public final class BTreeGroup05 extends AbstractBTree {
 					System.arraycopy(neighbourChildren, 1, neighbourChildren, 0, neighbour.getSize());
 					neighbourChildren[neighbour.getSize()] = -1;
 				}
-				
+
 				keys[node.getSize()] = stolenKey;
 				if (!node.isLeaf()) {
 					children[node.getSize() +1] = stolenChild;
 				}
-				
+
 				node.setSize(this.getMinSize());
-				
+
 				parentKeys[childPos] = neighbourKeys[0];
-				
+
 			}
 		}
-		
+
 
 		// No redistribution possible.
 		// merge needed
-		
+
 		if (node.getSize() + neighbour.getSize() < this.getMaxSize()) {
-		
+
 			if (left) {
-				
+
 				System.arraycopy(keys, 0, neighbourKeys, neighbour.getSize() + 1, this.getMinSize() -1);
 				neighbourKeys[neighbour.getSize()] = parentKeys[childPos];
-				
+
 				if (!node.isLeaf()) {
 					System.arraycopy(children, 0, neighbourChildren, neighbour.getSize(), this.getMinSize());
 				}
-				
+
 				System.arraycopy(parentKeys, childPos, parentKeys, childPos - 1, parent.getSize() - childPos -1);
 				System.arraycopy(parentChildren, childPos, parentChildren, childPos - 1, parent.getSize() -childPos);
 				parent.setSize(parent.getSize() -1);
 				parent.setChildID(parent.getSize(), -1);
 				parent.setKey(parent.getSize(), 0);
-			
+
 			} else {
-			
+
 				System.arraycopy(keys, this.getMinSize(), neighbourKeys, 0, neighbour.getSize());
 				keys[this.getMinSize() -1] = parentKeys[childPos];
-				
+
 				System.arraycopy(parentKeys, childPos + 1, parentKeys, childPos, parent.getSize() - childPos -1);
 				System.arraycopy(parentChildren, childPos + 1, parentChildren, childPos, parent.getSize() -childPos);
 				parent.setSize(parent.getSize() -1);
 				parent.setChildID(parent.getSize(), -1);
 				parent.setKey(parent.getSize(), 0);
-				
+
 				if (!node.isLeaf()) {
 					System.arraycopy(children, this.getMinSize(), neighbourChildren, 0, neighbour.getSize() + 1);
 				}
-				
+
 				node.setSize(node.getSize() + 1 + neighbour.getSize());
-				
+
 				this.removeNode(neighbourID);
-			
+
 			}
-		
+
 		}
-		
+
 		throw new UnsupportedOperationException("Not yet implemented.");
 	}
 }
