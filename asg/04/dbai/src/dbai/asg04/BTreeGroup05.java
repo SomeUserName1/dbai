@@ -227,6 +227,20 @@ public final class BTreeGroup05 extends AbstractBTree {
 				parent.setSize(this.getMinSize());
 				splitNode.setSize(this.getMinSize());
 
+			} else if (insertPosition == middle) {
+				
+				System.arraycopy(parent.getKeys(), middle, splitNode.getKeys(), 0, this.getMinSize());
+				System.arraycopy(parent.getChildren(), middle + 1, splitNode.getChildren(), 1, this.getMinSize());
+				
+				Arrays.fill(parent.getKeys(), middle, this.getMaxSize() - 1, 0);
+				Arrays.fill(parent.getChildren(), middle + 1, this.getMaxSize(), -1);
+				
+				parent.setSize(this.getMinSize());
+				splitNode.setSize(this.getMinSize());
+				
+				splitNode.setChildID(0, newNodeID);
+				parent.setKey(middle, key);
+				
 			} else {
 
 				//  new Child is inserted into right part of the node
