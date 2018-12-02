@@ -1,12 +1,15 @@
 package dbai.asg04;
 
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.util.BitSet;
 import java.util.Random;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
 
 /**
  * This class tests the BTreeGroup00 implementation.
@@ -25,7 +28,7 @@ public final class BTreeTest {
    private BitSet cmp = new BitSet();
 
    /** Resets BTreeGroup00 and BitSet. */
-   @BeforeEach
+   @Before
    public void buildUp() {
       // TODO you can experiment with the node size and/or write additional test methods
       this.tree = new BTreeGroup05(2);
@@ -38,7 +41,7 @@ public final class BTreeTest {
    @Test
    public void testFillEmpty() {
       final Random rng = new Random(42);
-      final int n = 200;
+      final int n = 300000;
       final int[] rand = new int[n];
       for (int i = 0; i < rand.length; i++) {
          rand[i] = rng.nextInt(n) + 1;
@@ -48,8 +51,8 @@ public final class BTreeTest {
          //if (i % (n / 10) == 0) {
 
           System.out.println("Insertion completed!");
-          this.tree.printChildren();
-          System.out.println(this.tree.toString());
+          //this.tree.printChildren();
+         // System.out.println(this.tree.toString());
           this.tree.checkInvariants();
          //   System.out.println(this.tree.getStatistics());
          //}
@@ -88,7 +91,7 @@ public final class BTreeTest {
             // insert value
             this.cmp.set(rnd);
             this.tree.insert(key);
-            assertTrue(this.tree.contains(key), "insertion of " + key + " failed");
+            assertTrue("insertion of " + key + " failed", this.tree.contains(key));
          } else if (nextOp == 1) {
             // random key lookup
             assertEquals(this.cmp.get(rnd), this.tree.contains(key));
@@ -96,7 +99,7 @@ public final class BTreeTest {
             // delete key
             this.cmp.clear(rnd);
             this.tree.delete(key);
-            assertFalse(this.tree.contains(key), "deletion of " + key + " failed");
+            assertFalse("deletion of " + key + " failed", this.tree.contains(key));
             assertEquals(this.cmp.cardinality(), this.tree.size());
          }
       }

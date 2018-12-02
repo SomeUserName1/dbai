@@ -77,7 +77,6 @@ public final class BTreeGroup05 extends AbstractBTree {
 			if (mNodeID == this.getRoot()) {
 				return keyIDPair(newNode.getKey(0), newNodeID);
 			}
-
 			return propagateSplit(searchPath, newNodeID, newNode.getKey(0));
 		}
 	}
@@ -105,10 +104,13 @@ public final class BTreeGroup05 extends AbstractBTree {
 		int[] keys = mNode.getKeys();
 		int[] children = mNode.getChildren();
 
+
+        System.out.println("Key to be inserted: " + key + " nodeID " + nodeID + " childID " + childID);
 		if (nodeSize == 0) {
 			mNode.setKey(nodeSize, key);
 			mNode.setSize(nodeSize + 1);
-		} else if (key > mNode.getKey(nodeSize - 1)) {;
+		} else if (key > mNode.getKey(nodeSize - 1)) {
+
 			mNode.setSize(nodeSize + 1);
 			mNode.setKey(nodeSize, key);
 			if (!mNode.isLeaf()) {
@@ -117,6 +119,7 @@ public final class BTreeGroup05 extends AbstractBTree {
 		} else { /* else look for the next larger key and insert */
 			for (int i = 0; i < nodeSize; ++i) {
 				if (key < keys[i]) {
+                    System.out.println(mNode.getKey(nodeSize-1));
 					/* shift all other keys to the right */
 					System.arraycopy(keys, i, keys, i + 1, nodeSize - i);
 					if (!mNode.isLeaf()) {
@@ -151,16 +154,15 @@ public final class BTreeGroup05 extends AbstractBTree {
 			/* check weather it is larger than the largest key of the current node. */
 			/* If so the location of the desired node must be in the subtree that the */
 			/* last child is pointing to */
-
+            int[] node_keys = mNode.getKeys();
 			/* else check the other keys and find the next larger one */
-			int i = 0;
-			for (int node_key : mNode.getKeys()) {
-				/* check if key can be found in left children */
-				if (key < node_key) {
+			for (int i = 0; i < mNode.getSize(); i++) {
+				/* check if key can be found in left child */
+				if (key < node_keys[i]) {
 					return concat(new int[] { nodeID }, this.searchLeaf(mNode.getChildID(i), key));
 				}
-				i++;
 			}
+			System.out.println("Search Leaf, greatest child id: " + mNode.getChildID(mNode.getSize()));
 			return concat(new int[] { nodeID }, this.searchLeaf(mNode.getChildID(mNode.getSize()), key));
 		}
 	}
@@ -178,7 +180,7 @@ public final class BTreeGroup05 extends AbstractBTree {
 		 * get parent node of the leaf. the leaf is at searchPath[searchPath.length-1],
 		 * so the parent is at len-2
 		 */
-		System.out.println("search path: " + Arrays.toString(searchPath) + "| RootID: " + this.getRoot());
+        System.out.println("SearchPath" + Arrays.toString(searchPath) + " newNodeID " + newNodeID + " key " + key);
 		int parentID = searchPath[searchPath.length - 2];
 		Node parent = this.getNode(parentID);
 		int parentSize = parent.getSize();
@@ -208,7 +210,7 @@ public final class BTreeGroup05 extends AbstractBTree {
 
 			if (insertPosition < middle) {
 
-				// new Child is inserted into left Node
+				// new Child is inserted into left part of the node
 
 				// assemble right Node
 				System.arraycopy(parent.getKeys(), middle, splitNode.getKeys(), 0, this.getMinSize());
@@ -225,7 +227,7 @@ public final class BTreeGroup05 extends AbstractBTree {
 
 			} else {
 
-				// new Child is inserted into right Node
+				//  new Child is inserted into right part of the node
 
 				System.arraycopy(parent.getKeys(), middle + 1, splitNode.getKeys(), 0, this.getMinSize() -1);
 				System.arraycopy(parent.getChildren(), middle + 1, splitNode.getChildren(), 0, this.getMinSize());
@@ -236,15 +238,17 @@ public final class BTreeGroup05 extends AbstractBTree {
 				parent.setSize(this.getMinSize());
 				splitNode.setSize(this.getMinSize() -1);
 
+				System.out.println("Key to be inserted: " + key + " newNodeID " + newNodeID + " splitNodeID " + splitNodeID);
 				insert(splitNodeID, key, newNodeID);
 
 			}
 
+
 			int middleKey = parent.getKey(middle);
 			parent.getKeys()[middle] = 0;
 
-			System.out.println("ParentID: " + parentID);
 			if (parentID == getRoot()) {
+
 				return keyIDPair(middleKey, splitNodeID);
 			}
 
@@ -262,8 +266,8 @@ public final class BTreeGroup05 extends AbstractBTree {
 					break;
 				}
 			}
-			System.out.println(insertPosition + " key " + key);
-			insert(parentID, this.getNode(newNodeID).getKey(0), newNodeID);
+
+			insert(parentID, key, newNodeID);
 
 			return NO_CHANGES; /* TERMINATION CONDITION */
 		}
