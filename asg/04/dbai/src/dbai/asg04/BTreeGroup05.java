@@ -214,14 +214,16 @@ public final class BTreeGroup05 extends AbstractBTree {
 
 				// assemble right Node
 				System.arraycopy(parent.getKeys(), middle, splitNode.getKeys(), 0, this.getMinSize());
-				System.arraycopy(parent.getChildren(), middle, splitNode.getChildren(), 0, this.getMinSize() + 1);
+				System.arraycopy(parent.getChildren(), middle + 1, splitNode.getChildren(), 1, this.getMinSize());
 
 				Arrays.fill(parent.getKeys(), middle, this.getMaxSize() - 1, 0);
-				Arrays.fill(parent.getChildren(), middle, this.getMaxSize(), -1);
+				Arrays.fill(parent.getChildren(), middle + 1, this.getMaxSize(), -1);
 
 				parent.setSize(this.getMinSize());
 				insert(parentID, key, newNodeID);
 
+				splitNode.setChildID(0, parent.getChildren()[middle + 1]);
+				
 				parent.setSize(this.getMinSize());
 				splitNode.setSize(this.getMinSize());
 
@@ -405,6 +407,12 @@ public final class BTreeGroup05 extends AbstractBTree {
 
 			}
 
+		}
+		
+		else {
+			
+			
+			
 		}
 
 		throw new UnsupportedOperationException("Not yet implemented.");
