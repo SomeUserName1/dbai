@@ -105,7 +105,6 @@ public final class BTreeGroup05 extends AbstractBTree {
 		int[] children = mNode.getChildren();
 
 
-        System.out.println("Key to be inserted: " + key + " nodeID " + nodeID + " childID " + childID);
 		if (nodeSize == 0) {
 			mNode.setKey(nodeSize, key);
 			mNode.setSize(nodeSize + 1);
@@ -119,7 +118,6 @@ public final class BTreeGroup05 extends AbstractBTree {
 		} else { /* else look for the next larger key and insert */
 			for (int i = 0; i < nodeSize; ++i) {
 				if (key < keys[i]) {
-                    System.out.println(mNode.getKey(nodeSize-1));
 					/* shift all other keys to the right */
 					System.arraycopy(keys, i, keys, i + 1, nodeSize - i);
 					if (!mNode.isLeaf()) {
@@ -162,7 +160,6 @@ public final class BTreeGroup05 extends AbstractBTree {
 					return concat(new int[] { nodeID }, this.searchLeaf(mNode.getChildID(i), key));
 				}
 			}
-			System.out.println("Search Leaf, greatest child id: " + mNode.getChildID(mNode.getSize()));
 			return concat(new int[] { nodeID }, this.searchLeaf(mNode.getChildID(mNode.getSize()), key));
 		}
 	}
@@ -180,7 +177,6 @@ public final class BTreeGroup05 extends AbstractBTree {
 		 * get parent node of the leaf. the leaf is at searchPath[searchPath.length-1],
 		 * so the parent is at len-2
 		 */
-        System.out.println("SearchPath" + Arrays.toString(searchPath) + " newNodeID " + newNodeID + " key " + key);
 		int parentID = searchPath[searchPath.length - 2];
 		Node parent = this.getNode(parentID);
 		int parentSize = parent.getSize();
@@ -254,7 +250,6 @@ public final class BTreeGroup05 extends AbstractBTree {
 				parent.setSize(this.getMinSize());
 				splitNode.setSize(this.getMinSize() -1);
 
-				System.out.println("Key to be inserted: " + key + " newNodeID " + newNodeID + " splitNodeID " + splitNodeID);
 				insert(splitNodeID, key, newNodeID);
 
 			}
