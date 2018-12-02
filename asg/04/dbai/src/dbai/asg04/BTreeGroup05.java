@@ -173,6 +173,7 @@ public final class BTreeGroup05 extends AbstractBTree {
 	 * @return NO_CHANGE or the key-id pair of the new node and the middle key
 	 */
 	private long propagateSplit(int[] searchPath, int newNodeID, int key) {
+		
 		/*
 		 * get parent node of the leaf. the leaf is at searchPath[searchPath.length-1],
 		 * so the parent is at len-2
@@ -181,6 +182,7 @@ public final class BTreeGroup05 extends AbstractBTree {
 		Node parent = this.getNode(parentID);
 		int parentSize = parent.getSize();
 		int parentKeys[] = parent.getKeys();
+		int parentChildren[] = parent.getChildren();
 
 		int insertPosition = parentSize;
 
@@ -203,49 +205,53 @@ public final class BTreeGroup05 extends AbstractBTree {
 			int splitNodeID = createNode(false);
 			Node splitNode = getNode(splitNodeID);
 
-
+			int splitNodeKeys[] = splitNode.getKeys();
+			int splitNodeChildren[] = splitNode.getChildren();
+			
 			if (insertPosition < middle) {
 
 				// new Child is inserted into left part of the node
 
 				// assemble right Node
-				System.arraycopy(parent.getKeys(), middle, splitNode.getKeys(), 0, this.getMinSize());
-				System.arraycopy(parent.getChildren(), middle + 1, splitNode.getChildren(), 1, this.getMinSize());
+				System.arraycopy(parentKeys, middle, splitNodeKeys, 0, this.getMinSize());
+				System.arraycopy(parentChildren, middle + 1, splitNodeChildren, 1, this.getMinSize());
 
-				Arrays.fill(parent.getKeys(), middle, this.getMaxSize() - 1, 0);
-				Arrays.fill(parent.getChildren(), middle + 1, this.getMaxSize(), -1);
+				Arrays.fill(parentKeys, middle, this.getMaxSize() - 1, 0);
+				Arrays.fill(parentChildren, middle + 1, this.getMaxSize(), -1);
 
 				parent.setSize(this.getMinSize());
 				insert(parentID, key, newNodeID);
 
-				splitNode.setChildID(0, parent.getChildren()[middle + 1]);
+				splitNodeChildren[0] = parentChildren[middle + 1]);
 				
 				parent.setSize(this.getMinSize());
 				splitNode.setSize(this.getMinSize());
 
 			} else if (insertPosition == middle) {
 				
-				System.arraycopy(parent.getKeys(), middle, splitNode.getKeys(), 0, this.getMinSize());
-				System.arraycopy(parent.getChildren(), middle + 1, splitNode.getChildren(), 1, this.getMinSize());
+				// inserted Key needs to be moved one level up
 				
-				Arrays.fill(parent.getKeys(), middle, this.getMaxSize() - 1, 0);
-				Arrays.fill(parent.getChildren(), middle + 1, this.getMaxSize(), -1);
+				System.arraycopy(parentKeys, middle, splitNodeKeys, 0, this.getMinSize());
+				System.arraycopy(parentChildren, middle + 1, splitNodeChildren, 1, this.getMinSize());
+				
+				Arrays.fill(parentKeys, middle, this.getMaxSize() - 1, 0);
+				Arrays.fill(parentChildren, middle + 1, this.getMaxSize(), -1);
 				
 				parent.setSize(this.getMinSize());
 				splitNode.setSize(this.getMinSize());
 				
-				splitNode.setChildID(0, newNodeID);
-				parent.setKey(middle, key);
+				splitNodeChildren[0] = newNodeID;
+				parentKeys[middle] = key;
 				
 			} else {
 
 				//  new Child is inserted into right part of the node
 
-				System.arraycopy(parent.getKeys(), middle + 1, splitNode.getKeys(), 0, this.getMinSize() -1);
-				System.arraycopy(parent.getChildren(), middle + 1, splitNode.getChildren(), 0, this.getMinSize());
+				System.arraycopy(parentKeys, middle + 1, splitNodeKeys, 0, this.getMinSize() -1);
+				System.arraycopy(parentChildren, middle + 1, splitNodeChildren, 0, this.getMinSize());
 
-				Arrays.fill(parent.getKeys(), middle + 1, this.getMaxSize() -1, 0);
-				Arrays.fill(parent.getChildren(), middle + 1, this.getMaxSize(), -1);
+				Arrays.fill(parentKeys, middle + 1, this.getMaxSize() -1, 0);
+				Arrays.fill(parentChildren, middle + 1, this.getMaxSize(), -1);
 
 				parent.setSize(this.getMinSize());
 				splitNode.setSize(this.getMinSize() -1);
@@ -255,8 +261,8 @@ public final class BTreeGroup05 extends AbstractBTree {
 			}
 
 
-			int middleKey = parent.getKey(middle);
-			parent.getKeys()[middle] = 0;
+			int middleKey = parentKeys[middle];
+			parentKeys[middle] = 0;
 
 			if (parentID == getRoot()) {
 
