@@ -41,20 +41,20 @@ public final class BTreeTest {
    @Test
    public void testFillEmpty() {
       final Random rng = new Random(42);
-      final int n = 10_000_000;
+      final int n = 30;
       final int[] rand = new int[n];
       for (int i = 0; i < rand.length; i++) {
          rand[i] = rng.nextInt(n) + 1;
          this.tree.insert(rand[i]);
          this.cmp.set(rand[i]);
-         if (i % (n / 10) == 0) {
+         //if (i % (n / 10) == 0) {
 
           //System.out.println("Insertion completed!");
           //this.tree.printChildren();
-         // System.out.println(this.tree.toString());
+          System.out.println(this.tree.toString());
           this.tree.checkInvariants();
          //   System.out.println(this.tree.getStatistics());
-         }
+         //}
       }
       this.tree.checkInvariants();
       assertEquals(this.cmp.cardinality(), this.tree.size());
