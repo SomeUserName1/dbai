@@ -296,6 +296,7 @@ public final class BTreeGroup05 extends AbstractBTree {
          neighbourID = parentChildren[1];
       } else  if (childPos == parent.getSize()) {
          neighbourID = parentChildren[parent.getSize() - 1];
+         left=true;
       } else {
          if (getNode(parentChildren[childPos - 1]).getSize() >
                getNode(parentChildren[childPos + 1]).getSize()) {
@@ -312,27 +313,34 @@ public final class BTreeGroup05 extends AbstractBTree {
       // do redistribution
       if (neighbour.getSize() < this.getMaxSize()) {
          if (left) {
-            int biggerKey = newKey < keys[0] ? keys[0] : newKey;
+            int biggerKey = newKey > keys[0] ? newKey :keys[0];
             int smallerKey = biggerKey == newKey ? keys[0] : newKey;
 
 
             System.arraycopy(keys, 1, keys, 0, this.getMaxSize()-1);
-            neighbour.setKey(neighbour.getSize(), biggerKey);
-            node.setKey(0, smallerKey);
+            neighbour.setKey(neighbour.getSize(), smallerKey);
+            node.setSize(node.getSize()-1);
+            int[] newPath = searchLeaf(searchPath[searchPath.length-2], biggerKey);
+            insert(newPath[newPath.length-1], biggerKey, -1);
+            incrementSize();
             neighbour.setSize(neighbour.getSize()+1);
 
-            parent.setKey(0, node.getKey(0));
+            parent.setKey(childPos-1, this.getNode(newPath[newPath.length-1]).getKey(0));
 
             return true;
          } else {
             int biggerKey = newKey > keys[this.getMaxSize()-1] ? newKey : keys[this.getMaxSize()-1];
             int smallerKey = biggerKey == newKey ? keys[this.getMaxSize()-1] : newKey;
 
+
             System.arraycopy(neighbourKeys, 0, neighbourKeys, 1, neighbour.getSize());
             neighbour.setKey(0, biggerKey);
-            node.setKey(this.getMaxSize()-1, smallerKey);
+            node.setSize(node.getSize()-1);
+            int[] newPath = searchLeaf(searchPath[searchPath.length-2], smallerKey);
+            insert(newPath[newPath.length-1], smallerKey, -1);
+            incrementSize();
             neighbour.setSize(neighbour.getSize()+1);
-            parent.setKey(0,neighbour.getKey(0));
+            parent.setKey(childPos, neighbour.getKey(0));
 
             return true;
          }
