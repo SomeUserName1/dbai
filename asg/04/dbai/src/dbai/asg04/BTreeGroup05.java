@@ -49,8 +49,9 @@ public final class BTreeGroup05 extends AbstractBTree {
 			return NO_CHANGES;
 
 		} else { /* Split the child */
-			// TODO Check neighbours and redistribute up to d nodes
-
+         if( this.getRoot() != mNodeID)
+            if(redistributeInsert(searchPath, key))
+               return NO_CHANGES;
 			int[] splitKeys = mNode.getKeys();
 			int newNodeID = this.createNode(true);
 			Node newNode = this.getNode(newNodeID);
@@ -218,19 +219,20 @@ public final class BTreeGroup05 extends AbstractBTree {
 
 		/* if there is no free space left */
 		if (!(parentSize < this.getMaxSize())) {
-			/* find the mid key */
+		   /* find the mid key */
 			/*
 			 * if insertPosition doesn't change after the following for-loop it's the
 			 * largest element
 			 */
+
 			int middle = this.getMinSize();
 
 			for (int i = 0; i < parentSize; ++i) {
-				if (key < parentKeys[i]) {
-					insertPosition = i;
-					break;
-				}
-			}
+            if (key < parentKeys[i]) {
+               insertPosition = i;
+               break;
+            }
+         }
 
 			int splitNodeID = createNode(false);
 			Node splitNode = getNode(splitNodeID);
@@ -290,12 +292,10 @@ public final class BTreeGroup05 extends AbstractBTree {
 
 			}
 
-
 			int middleKey = parentKeys[middle];
 			parentKeys[middle] = 0;
 
 			if (parentID == getRoot()) {
-
 				return keyIDPair(middleKey, splitNodeID);
 			}
 
@@ -303,22 +303,95 @@ public final class BTreeGroup05 extends AbstractBTree {
 
 		} else {
 
-			/*
-			 * 		 * parent has free space, adjust the key and ID to the first element in the new
-			 * 	 * node	 */
-			/* and its ID respectively TODO messup here */
-			for (int i = 0; i < parentSize; ++i) {
-				if (key < parentKeys[i]) {
-					insertPosition = i;
-					break;
-				}
-			}
-
 			insert(parentID, key, newNodeID);
-
-			return NO_CHANGES; /* TERMINATION CONDITION */
+			return NO_CHANGES;
 		}
 	}
+
+
+	private boolean redistributeInsert(int[] searchPath, int newKey){
+		
+	   int nodeID = searchPath[searchPath.length-1];
+	   Node node = this.getNode(nodeID);
+	   int[] keys = node.getKeys();
+
+	   int parentID = searchPath[searchPath.length-2];
+	   Node parent = this.getNode(parentID);
+      int[] parentChildren = parent.getChildren();
+
+      /* try to redistribute */
+      int childPos = getChildPos(parentID, nodeID);
+      int neighbourID;
+
+      boolean left = false;
+      if(childPos == 0) {
+         neighbourID = parentChildren[1];
+      } else  if (childPos == parent.getSize()) {
+         neighbourID = parentChildren[parent.getSize() - 1];
+         left=true;
+      } else {
+         if (getNode(parentChildren[childPos - 1]).getSize() >
+               getNode(parentChildren[childPos + 1]).getSize()) {
+            neighbourID = parentChildren[childPos + 1];
+         } else {
+            neighbourID = parentChildren[childPos - 1];
+            left = true;
+         }
+      }
+
+      Node neighbour = getNode(neighbourID);
+      int neighbourKeys[] = neighbour.getKeys();
+
+      // do redistribution
+      if (neighbour.getSize() < this.getMaxSize()) {
+         if (left) {
+            int biggerKey = newKey > keys[0] ? newKey :keys[0];
+            int smallerKey = biggerKey == newKey ? keys[0] : newKey;
+
+
+            System.arraycopy(keys, 1, keys, 0, this.getMaxSize()-1);
+            neighbour.setKey(neighbour.getSize(), smallerKey);
+            node.setSize(node.getSize()-1);
+            int[] newPath = searchLeaf(searchPath[searchPath.length-2], biggerKey);
+            insert(newPath[newPath.length-1], biggerKey, -1);
+            incrementSize();
+            neighbour.setSize(neighbour.getSize()+1);
+
+            parent.setKey(childPos-1, this.getNode(newPath[newPath.length-1]).getKey(0));
+
+            return true;
+         } else {
+            int biggerKey = newKey > keys[this.getMaxSize()-1] ? newKey : keys[this.getMaxSize()-1];
+            int smallerKey = biggerKey == newKey ? keys[this.getMaxSize()-1] : newKey;
+
+
+            System.arraycopy(neighbourKeys, 0, neighbourKeys, 1, neighbour.getSize());
+            neighbour.setKey(0, biggerKey);
+            node.setSize(node.getSize()-1);
+            int[] newPath = searchLeaf(searchPath[searchPath.length-2], smallerKey);
+            insert(newPath[newPath.length-1], smallerKey, -1);
+            incrementSize();
+            neighbour.setSize(neighbour.getSize()+1);
+            parent.setKey(childPos, neighbour.getKey(0));
+
+            return true;
+         }
+      }
+      return false;
+   }
+
+   private int getChildPos(int parentID, int nodeID){
+	   Node parent = this.getNode(parentID);
+	   int[] parentChildren = parent.getChildren();
+      int childPos = 0;
+      for (int i = 0; i <= parent.getSize(); i++) {
+         if (parentChildren[i] == nodeID) {
+            childPos = i;
+            break;
+         }
+      }
+      return childPos;
+   }
 
 	private void propagateMerge(int[] searchPath) {
 

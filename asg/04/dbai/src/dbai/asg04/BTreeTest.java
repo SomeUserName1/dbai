@@ -51,9 +51,9 @@ public final class BTreeTest {
 
           //System.out.println("Insertion completed!");
           //this.tree.printChildren();
-         // System.out.println(this.tree.toString());
+          //System.out.println(this.tree.toString());
           this.tree.checkInvariants();
-         //   System.out.println(this.tree.getStatistics());
+          System.out.println(this.tree.getStatistics());
          }
       }
       this.tree.checkInvariants();
