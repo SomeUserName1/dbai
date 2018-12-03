@@ -609,16 +609,7 @@ public final class BTreeGroup05 extends AbstractBTree {
                 // remove node from the tree
                 this.removeNode(nodeID);
 
-                if (this.getRoot() == parentID) {
-                    // set new root if needed
-                    if (parent.getSize() < 1) {
-                        this.setRoot(neighbourID);
-                    }
-                    return;
-                } else if (parent.getSize() < this.getMinSize()) {
-                    // merge parent if needed
-                    this.propagateMerge(Arrays.copyOfRange(searchPath, 0, searchPath.length - 1));
-                }
+                if (mergeRoot(searchPath, neighbourID, parentID, parent)) return;
 
                 return;
             } else {
@@ -653,14 +644,7 @@ public final class BTreeGroup05 extends AbstractBTree {
 
                 this.removeNode(neighbourID);
 
-                if (this.getRoot() == parentID) {
-                    if (parent.getSize() < 1) {
-                        this.setRoot(nodeID);
-                    }
-                    return;
-                } else if (parent.getSize() < this.getMinSize()) {
-                    this.propagateMerge(Arrays.copyOfRange(searchPath, 0, searchPath.length - 1));
-                }
+                if (mergeRoot(searchPath, nodeID, parentID, parent)) return;
 
                 return;
             }
@@ -668,5 +652,17 @@ public final class BTreeGroup05 extends AbstractBTree {
 
         // This statement should never be reached!
         throw new UnsupportedOperationException("Unsupported Operation");
+    }
+
+    private boolean mergeRoot(int[] searchPath, int nodeID, int parentID, Node parent) {
+        if (this.getRoot() == parentID) {
+            if (parent.getSize() < 1) {
+                this.setRoot(nodeID);
+            }
+            return true;
+        } else if (parent.getSize() < this.getMinSize()) {
+            this.propagateMerge(Arrays.copyOfRange(searchPath, 0, searchPath.length - 1));
+        }
+        return false;
     }
 }
