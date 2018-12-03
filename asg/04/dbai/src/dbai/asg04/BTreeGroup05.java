@@ -13,11 +13,14 @@ public final class BTreeGroup05 extends AbstractBTree {
 	protected boolean containsKey(final int nodeID, final int key) {
 		int[] searchPath = this.searchLeaf(nodeID, key);
 		Node mNode = this.getNode(searchPath[searchPath.length - 1]);
+		
+		if(!mNode.isLeaf()) return false;
 
 		/* loop over the keys in the child and return true if it's present */
-		for (int leaf_key : mNode.getKeys())
-			if (key == leaf_key)
-				return true;
+		for (int i = 0; i < mNode.getSize(); i++) {
+			if(mNode.getKey(i) == key) return true;
+		}
+		
 		/* if we looped over all keys but didnt find anything, the key is not present */
 		return false;
 	}
@@ -83,11 +86,37 @@ public final class BTreeGroup05 extends AbstractBTree {
 
 	@Override
 	protected boolean deleteKey(final int nodeID, final int key) {
+		
+		// get Path to Key
 		int[] searchPath = this.searchLeaf(nodeID, key);
 		Node mNode = this.getNode(searchPath[searchPath.length - 1]);
-
-		// TODO implement this analog to insert
-		throw new UnsupportedOperationException("Not yet implemented.");
+		
+		int keys[] = mNode.getKeys();
+		
+		// find position in node
+		int keyIndex = -1;
+		for(int i = 0; i < mNode.getSize(); i++) {
+			if (key == keys[i]) {
+				keyIndex = i;
+				break;
+			}
+		}
+		
+		if (keyIndex == -1) return false;
+		
+		// refactor Node
+		System.arraycopy(keys, keyIndex + 1, keys, keyIndex, mNode.getSize() - keyIndex - 1);
+		mNode.setSize(mNode.getSize() - 1);
+		mNode.setKey(mNode.getSize(), 0);
+		
+		// if node is to small and not the root, merge it
+		if (mNode.getSize() < this.getMinSize() && searchPath.length > 1) {
+			propagateMerge(searchPath);
+		}
+		
+		this.decrementSize();
+		
+		return true;
 	}
 
 	private static int[] concat(int[] a, int[] b) {
@@ -99,12 +128,13 @@ public final class BTreeGroup05 extends AbstractBTree {
 	}
 
 	private void insert(int nodeID, int key, int childID) {
+		
+		// find node to insert the Key into
 		Node mNode = this.getNode(nodeID);
 		int nodeSize = mNode.getSize();
 		int[] keys = mNode.getKeys();
 		int[] children = mNode.getChildren();
-
-
+		
 		if (nodeSize == 0) {
 			mNode.setKey(nodeSize, key);
 			mNode.setSize(nodeSize + 1);
@@ -222,7 +252,7 @@ public final class BTreeGroup05 extends AbstractBTree {
 				parent.setSize(this.getMinSize());
 				insert(parentID, key, newNodeID);
 
-				splitNodeChildren[0] = parentChildren[middle + 1]);
+				splitNodeChildren[0] = parentChildren[middle + 1];
 				
 				parent.setSize(this.getMinSize());
 				splitNode.setSize(this.getMinSize());
@@ -290,8 +320,9 @@ public final class BTreeGroup05 extends AbstractBTree {
 		}
 	}
 
-	private long propagateMerge(int[] searchPath) {
+	private void propagateMerge(int[] searchPath) {
 
+		// get node and parent
 		int nodeID = searchPath[searchPath.length -1];
 		int parentID = searchPath[searchPath.length -2];
 		Node parent = getNode(parentID);
@@ -299,10 +330,10 @@ public final class BTreeGroup05 extends AbstractBTree {
 		Node node = getNode(nodeID);
 		int keys[] = node.getKeys();
 		int children[] = node.getChildren();
-
+		
 		int parentChildren[] = parent.getChildren();
 		int parentKeys[] = parent.getKeys();
-
+	
 		int childPos = 0;
 		for (int i = 0; i <= parent.getSize(); i++) {
 			if (parentChildren[i] == nodeID) {
@@ -311,73 +342,119 @@ public final class BTreeGroup05 extends AbstractBTree {
 			}
 		}
 
-		int neighbourID;
+		// find the smallest neighbor
+		int neighbourIndex;
 
 		boolean left = false;
 
 		if(childPos == 0) {
-			neighbourID = parentChildren[1];
+			neighbourIndex = 1;
 		} else  if (childPos == parent.getSize()) {
-			neighbourID = parent.getSize() - 1;
+			neighbourIndex = parent.getSize() - 1;
+			left = true;
 		} else {
-			if (getNode(parentChildren[childPos - 1]).getSize() >
+			if (getNode(parentChildren[childPos - 1]).getSize() <
 				getNode(parentChildren[childPos + 1]).getSize()) {
 
-				neighbourID = childPos + 1;
+				neighbourIndex = childPos + 1;
 			} else {
-				neighbourID = childPos - 1;
+				neighbourIndex = childPos - 1;
 				left = true;
 			}
 		}
-
+		
+		// get neighbor
+		int neighbourID = parentChildren[neighbourIndex];
 		Node neighbour = getNode(neighbourID);
 		int neighbourKeys[] = neighbour.getKeys();
 		int neighbourChildren[] = neighbour.getChildren();
 
 		// do redistribution
 		if (neighbour.getSize() > this.getMinSize()) {
+			
+			// neighbor is left of node
 			if (left) {
+				
+				// node is a leaf
+				if (node.isLeaf()) {
+				
+					// duplicate smallest key of right node
+					int stolenKey = neighbourKeys[neighbour.getSize() -1];
+					
+					neighbour.setSize(neighbour.getSize() -1);
 
-				int stolenKey = neighbourKeys[neighbour.getSize() -1];
-				int stolenChild = -1;
-				if(!neighbour.isLeaf()) {
-					stolenChild = neighbourChildren[neighbour.getSize()];
+					System.arraycopy(keys, 0, keys, 1, this.getMinSize() -1);
+					keys[0] = stolenKey;
+				
+
+					node.setSize(this.getMinSize());
+				
+					parentKeys[childPos - 1] = stolenKey;
+				
+				// node is a inner node
+				} else {
+					
+					// "rotate" keys through parent
+					System.arraycopy(keys, 0, keys, 1, this.getMinSize() -1);
+					
+					keys[0] = parentKeys[childPos - 1];
+					parentKeys[childPos - 1] = neighbourKeys[neighbour.getSize() -1];
+					
+					node.setSize(this.getMinSize());
+					 
+					
+					int stolenChild = neighbourChildren[neighbour.getSize()];
 					neighbourChildren[neighbour.getSize()] = -1;
-				}
-				neighbour.setSize(neighbour.getSize() -1);
-
-				System.arraycopy(keys, 0, keys, 1, this.getMinSize() -1);
-				keys[0] = stolenKey;
-				if (!node.isLeaf()) {
+					
 					System.arraycopy(children, 0, children, 1, this.getMinSize());
 					children[0] = stolenChild;
+					
+					neighbour.setSize(neighbour.getSize() -1);
 				}
 
-				node.setSize(this.getMinSize());
-
-				parentKeys[childPos] = stolenKey;
-
+			// neighbor is right of node
 			} else {
+				
+				// node is a leaf
+				if (node.isLeaf()) {
 
-				int stolenKey = neighbourKeys[0];
-				System.arraycopy(neighbourKeys, 1, neighbourKeys, 0, neighbour.getSize() -1);
-				int stolenChild = -1;
-				if (!neighbour.isLeaf()) {
-					stolenChild = neighbourChildren[0];
+					// duplicate smallest key of right node
+					int stolenKey = neighbourKeys[0];
+					System.arraycopy(neighbourKeys, 1, neighbourKeys, 0, neighbour.getSize() -1);
+				
+					neighbour.setSize(neighbour.getSize() - 1);
+
+					keys[this.getMinSize() - 1] = stolenKey;
+				
+					node.setSize(this.getMinSize());
+
+					parentKeys[childPos] = neighbourKeys[0];
+				
+				// node is a inner node
+				} else {
+						
+					// "rotate" keys through parent
+					keys[this.getMinSize() - 1] = parentKeys[childPos];
+					parentKeys[childPos]  = neighbourKeys[0];
+					
+					int stolenChild = neighbourChildren[0];
+					
+					System.arraycopy(neighbourKeys, 1, neighbourKeys, 0, neighbour.getSize() -1);
 					System.arraycopy(neighbourChildren, 1, neighbourChildren, 0, neighbour.getSize());
+					
+					
 					neighbourChildren[neighbour.getSize()] = -1;
+					
+					children[node.getSize() + 1] = stolenChild;
+					
+					
+					node.setSize(node.getSize() + 1);
+					neighbour.setSize(neighbour.getSize() -1);
+					
 				}
-
-				keys[node.getSize()] = stolenKey;
-				if (!node.isLeaf()) {
-					children[node.getSize() +1] = stolenChild;
-				}
-
-				node.setSize(this.getMinSize());
-
-				parentKeys[childPos] = neighbourKeys[0];
-
 			}
+			
+			return;
 		}
 
 
@@ -385,51 +462,100 @@ public final class BTreeGroup05 extends AbstractBTree {
 		// merge needed
 
 		if (node.getSize() + neighbour.getSize() < this.getMaxSize()) {
-
+			
+			// neighbor is left of node
 			if (left) {
-
-				System.arraycopy(keys, 0, neighbourKeys, neighbour.getSize() + 1, this.getMinSize() -1);
-				neighbourKeys[neighbour.getSize()] = parentKeys[childPos];
-
-				if (!node.isLeaf()) {
-					System.arraycopy(children, 0, neighbourChildren, neighbour.getSize(), this.getMinSize());
+				
+				if (node.isLeaf()) {
+					// copy keys of node to neighbor
+					System.arraycopy(keys, 0, neighbourKeys, neighbour.getSize(), this.getMinSize() -1);
+				} else {
+					// copy keys of node to neighbor and leave place for the key from the parent node
+					System.arraycopy(keys, 0, neighbourKeys, neighbour.getSize() + 1, this.getMinSize() -1);
+					neighbourKeys[neighbour.getSize()] = parentKeys[childPos - 1];
 				}
 
-				System.arraycopy(parentKeys, childPos, parentKeys, childPos - 1, parent.getSize() - childPos -1);
-				System.arraycopy(parentChildren, childPos, parentChildren, childPos - 1, parent.getSize() -childPos);
+				if (!node.isLeaf()) {
+					// copy children to neighbour node
+					System.arraycopy(children, 0, neighbourChildren, neighbour.getSize() + 1, this.getMinSize());
+				}
+
+				if (childPos < parent.getSize()) { 
+					// refactor Parent
+					System.arraycopy(parentKeys, childPos, parentKeys, childPos - 1, parent.getSize() - childPos);
+					System.arraycopy(parentChildren, childPos + 1, parentChildren, childPos, parent.getSize() - childPos);
+				}
 				parent.setSize(parent.getSize() -1);
-				parent.setChildID(parent.getSize(), -1);
+				parent.setChildID(parent.getSize() + 1, -1);
 				parent.setKey(parent.getSize(), 0);
+				
+		
+				// set size of neighbor
+				if (node.isLeaf()) {
+					neighbour.setSize(node.getSize() + neighbour.getSize());
+				} else {
+					neighbour.setSize(node.getSize() + 1 + neighbour.getSize());
+				}
+	
+				// remove node from the tree
+				this.removeNode(nodeID);
+				
+				if (this.getRoot() == parentID) {
+					// set new root if needed
+					if( parent.getSize() < 1 ) this.setRoot(neighbourID);
+					return;
+				} else if(parent.getSize() < this.getMinSize()) {
+					// merge parent if needed
+					propagateMerge(Arrays.copyOfRange(searchPath, 0, searchPath.length - 1));
+				}
+				
+				return;
 
 			} else {
-
-				System.arraycopy(keys, this.getMinSize(), neighbourKeys, 0, neighbour.getSize());
-				keys[this.getMinSize() -1] = parentKeys[childPos];
-
-				System.arraycopy(parentKeys, childPos + 1, parentKeys, childPos, parent.getSize() - childPos -1);
-				System.arraycopy(parentChildren, childPos + 1, parentChildren, childPos, parent.getSize() -childPos);
+				
+				// analog to left
+				
+				if (node.isLeaf()) {
+					System.arraycopy(neighbourKeys, 0,  keys, this.getMinSize() - 1, neighbour.getSize());
+				} else {
+					System.arraycopy(neighbourKeys, 0, keys, this.getMinSize(), neighbour.getSize());
+					keys[this.getMinSize() -1] = parentKeys[childPos];
+				}
+				
+				if(childPos < parent.getSize() - 1)
+				{
+					System.arraycopy(parentKeys, childPos + 1, parentKeys, childPos, parent.getSize() - childPos - 1);
+					System.arraycopy(parentChildren, childPos + 2, parentChildren, childPos + 1, parent.getSize() - childPos - 1);
+				}
 				parent.setSize(parent.getSize() -1);
-				parent.setChildID(parent.getSize(), -1);
+				parent.setChildID(parent.getSize() + 1, -1);
 				parent.setKey(parent.getSize(), 0);
 
 				if (!node.isLeaf()) {
-					System.arraycopy(children, this.getMinSize(), neighbourChildren, 0, neighbour.getSize() + 1);
+					System.arraycopy(neighbourChildren, 0, children, this.getMinSize(), neighbour.getSize() + 1);
 				}
 
-				node.setSize(node.getSize() + 1 + neighbour.getSize());
-
+				if (node.isLeaf()) {
+					node.setSize(node.getSize() + neighbour.getSize());
+				} else {
+					node.setSize(node.getSize() + 1 + neighbour.getSize());
+				}
+				
 				this.removeNode(neighbourID);
-
+				
+				if (this.getRoot() == parentID) {
+					if( parent.getSize() < 1 ) this.setRoot(nodeID);
+					return;
+				} else if(parent.getSize() < this.getMinSize()) {
+					propagateMerge(Arrays.copyOfRange(searchPath, 0, searchPath.length - 1));
+				}
+				
+				return;
 			}
 
-		}
+		} 
 		
-		else {
-			
-			
-			
-		}
-
-		throw new UnsupportedOperationException("Not yet implemented.");
+		// This statement should never be reached!
+		throw new UnsupportedOperationException("Unsupported Operation");
 	}
 }
