@@ -1,0 +1,4 @@
+SELECT * FROM Sailors;
+SELECT * FROM Reserves;
+SELECT * FROM Boats;
+SELECT * FROM Test;

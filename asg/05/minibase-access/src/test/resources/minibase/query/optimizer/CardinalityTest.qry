@@ -1,0 +1,15 @@
+(PROJECT,
+   (EQJOIN(d.d_key, a.a_key),
+      (EQJOIN(b.b_key, d.d_key),
+         (SELECT,
+            GET(b),
+            SEL(0.055, b.b_key)
+         ),
+         GET(d)
+      ),
+      (SELECT,
+         GET(a),
+         SEL(0.231, a.a_key)
+      )
+   )
+)

@@ -1,0 +1,120 @@
+===============================================================================
+MINIBASE FOR JAVA
+Copyright (c) 2013-2014 University of Konstanz
+
+A derivative work developed by:
+   Michael Grossniklaus <michael.grossniklaus@uni.kn>
+   Leonard Wörteler <leonard.woerteler@uni.kn>
+   Wai-Lok Cheung <wai-Lok.cheung@uni.kn>
+   Manuel Hotz <manuel.hotz@uni.kn>
+   Manfred Schäfer <manfred.schaefer@uni.kn>
+   Johann Bornholdt <johann.bornholdt@uni.kn>
+
+This software is copyrighted by the University of Konstanz, Germany, the 
+authors and other parties. The following terms apply to all files associated 
+with the software unless explicitly disclaimed in individual files. Note, 
+that this software is neither open-source, freeware nor shareware.
+
+The authors hereby grant permission to use this software for EDUCATIONAL 
+PURPOSES ONLY. Permission is hereby granted, free of charge, to any person 
+obtaining a copy of this software and associated documentation files (the 
+"Software") to use, copy, modify, merge, and distribute or publish copies 
+of the Software, and to permit persons to whom the Software is furnished 
+to do so, subject to the following conditions:
+
+  * Redistribution and use in source and binary forms are permitted provided
+    that this entire copyright notice is duplicated in all such copies, and
+    that any documentation, announcements, and other materials related to such
+    distribution and use acknowledge that the software was developed at the
+    University of Konstanz, Germany.
+
+  * No charge, other than an "at-cost" distribution fee, may be charged for
+    copies, derivations, or distributions of this material without the express
+    written consent of the copyright holder.
+
+  * Neither the name of the University nor the names of the authors may be
+    used to endorse or promote products derived from this material without
+    specific prior written permission.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+CONTRIBUTORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF, OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS WITH
+THE SOFTWARE.
+
+===============================================================================
+MINIBASE FOR JAVA
+Copyright (c) 2006 Purdue University
+
+A derivative work developed by:
+  Chris Mayfield <cmayfiel@cs.purdue.edu>
+  Department of Computer Science, Purdue University
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software") to use,
+copy, modify, merge, and distribute or publish copies of the Software, and to
+permit persons to whom the Software is furnished to do so, subject to the
+following conditions:
+
+  * Redistribution and use in source and binary forms are permitted provided
+    that this entire copyright notice is duplicated in all such copies, and
+    that any documentation, announcements, and other materials related to such
+    distribution and use acknowledge that the software was developed at Purdue
+    University, West Lafayette, IN.
+
+  * No charge, other than an "at-cost" distribution fee, may be charged for
+    copies, derivations, or distributions of this material without the express
+    written consent of the copyright holder.
+
+  * Neither the name of the University nor the names of the authors may be
+    used to endorse or promote products derived from this material without
+    specific prior written permission.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+CONTRIBUTORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF, OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS WITH
+THE SOFTWARE.
+
+===============================================================================
+MINIBASE TERMS AND USER AGREEMENT
+
+Minibase (c) Copyright R. Ramakrishnan
+University of Wisconsin at Madison, 1996-1997
+All Rights Reserved. Version 2.0
+
+RESEARCH SOFTWARE DISCLAIMER
+
+As unestablished, research software, this program is provided free of charge on
+an "as is" basis without warranty of any kind, either express or implied.
+Acceptance and use of this program constitutes the user's understanding that
+(s)he will have no recourse for any actual or consequential damages, including,
+but not limited to, lost profits or savings, arising out of the use of or
+inability to use this program. 
+
+USER AGREEMENT
+
+By acceptance and use of this experimental system, the user agrees to the
+following:
+
+  * This program is provided free of charge for the user's personal, non-
+    commercial, educational or experimental use.
+
+  * All title, ownership and rights to this program and any copies remain with
+    the copyright holder, irrespective of the ownership of the media on which
+    the program resides.
+
+  * The user is permitted to create derivative works to this program. However,
+    all copies of the program and its derivative works must contain the
+    Minibase copyright notice, the unestablished software disclaimer and this
+    user agreement.
+
+  * The user understands and agrees that this program and any derivative works
+    are to be used solely for experimental purposes and are not to be sold or
+    commercially exploited in any manner without express written permission.
+
+===============================================================================

@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<systemCatalog name="default_catalog" xmlns="http://minibase/catalog/v1">
+	<tables>
+		<table name="customer">
+			<cardinality>150000</cardinality>
+			<pages>3585</pages>
+			<width>58.5</width>
+			<columns>
+				<column name="c_custkey" type="integer">
+					<width>4</width>
+					<distinctValues>150000</distinctValues>
+				</column>
+				<column name="c_name" type="character varying(25)">
+					<width>19</width>
+					<distinctValues>150000</distinctValues>
+				</column>
+				<column name="c_address" type="character varying(25)">
+					<width>26</width>
+					<distinctValues>150000</distinctValues>
+				</column>
+				<column name="c_nationkey" type="integer">
+					<width>4</width>
+					<distinctValues>25</distinctValues>
+				</column>
+				<column name="c_phone" type="character(15)">
+					<width>16</width>
+					<distinctValues>150000</distinctValues>
+				</column>
+				<column name="c_acctbal" type="numeric(15,2)">
+					<width>6</width>
+					<distinctValues>140187</distinctValues>
+				</column>
+				<column name="c_mktsegment" type="character(10)">
+					<width>11</width>
+					<distinctValues>5</distinctValues>
+				</column>
+				<column name="c_comment" type="character varying(117)">
+					<width>73</width>
+					<distinctValues>149968</distinctValues>
+				</column>
+			</columns>
+			<primaryKey>
+				<columns>
+					<column ref="c_nationkey" />
+				</columns>
+			</primaryKey>
+			<foreignKey>
+				<sourceColumns>
+					<column ref="c_comment" />
+				</sourceColumns>
+				<targetColumns>
+					<column ref="l_orderkey" table="lineitem" />
+				</targetColumns>
+			</foreignKey>
+		</table>
+		<table name="lineitem">
+			<cardinality>6001215</cardinality>
+			<pages>112503</pages>
+			<width>32.5</width>
+			<columns>
+				<column name="l_orderkey" type="integer">
+					<width>4</width>
+					<distinctValues>1500000</distinctValues>
+				</column>
+				<column name="l_partkey" type="integer">
+					<width>4</width>
+					<distinctValues>200000</distinctValues>
+				</column>
+				<column name="l_suppkey" type="integer">
+					<width>4</width>
+					<distinctValues>10000</distinctValues>
+				</column>
+				<column name="l_linenumber" type="integer">
+					<width>4</width>
+					<distinctValues>7</distinctValues>
+				</column>
+				<column name="l_quantity" type="numeric(15,2)">
+					<width>5</width>
+					<distinctValues>50</distinctValues>
+				</column>
+			</columns>
+			<primaryKey>
+				<columns>
+					<column ref="l_orderkey" />
+					<column ref="l_linenumber" />
+				</columns>
+			</primaryKey>
+			<foreignKey>
+				<sourceColumns>
+					<column ref="l_suppkey" />
+				</sourceColumns>
+				<targetColumns>
+					<column ref="c_custkey" table="customer" />
+				</targetColumns>
+			</foreignKey>
+			<foreignKey>
+				<sourceColumns>
+					<column ref="l_partkey" />
+					<column ref="l_suppkey" />
+				</sourceColumns>
+				<targetColumns>
+					<column ref="c_custkey" table="customer" />
+					<column ref="c_comment" table="customer" />
+				</targetColumns>
+			</foreignKey>
+			<indexes>
+				<index name="index_on_something" type="btree" clustered="true">
+					<pages>15</pages>
+					<cardinality>528</cardinality>
+					<keyColumns>
+						<column ref="l_suppkey" />
+					</keyColumns>
+				</index>
+			</indexes>
+		</table>
+	</tables>
+</systemCatalog>

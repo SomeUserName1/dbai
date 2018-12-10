@@ -1,0 +1,17 @@
+(DISTINCT,
+   (PROJECT(<S.sname>),
+      (SELECT,
+         (SELECT,
+            GET(Sailors, S),
+            (OP_GT,
+               ATTR(S.rating),
+               INT(3)
+            )
+         ),
+         (OP_LT,
+            ATTR(S.age),
+            INT(21)
+         )
+      )
+   )
+)

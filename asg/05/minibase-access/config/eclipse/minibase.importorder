@@ -1,0 +1,12 @@
+#Organize Import Order
+#Thu May 01 18:40:41 CEST 2014
+9=minibase
+8=kn.uni
+7=ch
+6=edu
+5=org
+4=com
+3=junit
+2=javax
+1=java
+0=\#org.junit.Assert
