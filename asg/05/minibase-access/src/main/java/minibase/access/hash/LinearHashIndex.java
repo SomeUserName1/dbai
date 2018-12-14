@@ -73,6 +73,9 @@ public final class LinearHashIndex implements HashIndex {
    public static LinearHashIndex openIndex(final BufferManager bufferManager, final String fileName,
          final int searchKeyLength) {
       final PageID headID = bufferManager.getDiskManager().getFileEntry(fileName);
+      if (!headID.isValid()) {
+         return null;
+      }
       return new LinearHashIndex(bufferManager, Optional.of(fileName), headID);
    }
 
