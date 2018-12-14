@@ -210,7 +210,7 @@ public final class LinearHashIndex implements HashIndex {
       if (this.fileName.isPresent()) {
          bufferManager.getDiskManager().deleteFileEntry(fileName.get());
       }
-      this.headID = null;
+      this.headID = PageID.INVALID;
       this.numBuckets = 0;
    }
 
@@ -219,11 +219,15 @@ public final class LinearHashIndex implements HashIndex {
       final int hash = key.getHash(this.getLevel());
 
       PageID bucketId = getBucketID(hash);
+      if (!bucketId.isValid()) {
+         return Optional.empty();
+      }
+
       BucketChainIterator iterator = new BucketChainIterator(bufferManager, bucketId, this.entrySize);
 
       while (iterator.hasNext()) {
          DataEntry entry = iterator.next();
-         if (entry.equals(key)) {
+         if (entry.getSearchKey().equals(key)) {
             return Optional.of(entry);
          }
       }
@@ -233,10 +237,19 @@ public final class LinearHashIndex implements HashIndex {
 
    @Override
    public void insert(final SearchKey key, final RecordID rid) {
+      if (key == null || rid == null) {
+         throw new NullPointerException();
+      }
+
       final int hash = key.getHash(this.getLevel());
 
       PageID bucketId = getBucketID(hash);
-      insertIntoBucket(bucketId, new DataEntry(key, rid, this.entrySize));
+      PageID insertedBucketId = insertIntoBucket(bucketId, new DataEntry(key, rid, this.entrySize));
+
+      if (!bucketId.equals(insertedBucketId)){
+         bucketId = insertedBucketId;
+         setBucketID(hash, bucketId);
+      }
 
       Page<HashDirectoryHeader> header = bufferManager.pinPage(this.headID);
       HashDirectoryHeader.setSize(header, ++this.numEntries);
@@ -295,6 +308,10 @@ public final class LinearHashIndex implements HashIndex {
 
    @Override
    public boolean remove(final SearchKey key, final RecordID rid) {
+      if (key == null || rid == null) {
+         throw new NullPointerException();
+      }
+
       final int hash = key.getHash(this.getLevel());
 
       if (removeFromBucket(hash, new DataEntry(key, rid, this.entrySize))) {
