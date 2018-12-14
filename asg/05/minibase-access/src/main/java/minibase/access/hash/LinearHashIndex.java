@@ -240,14 +240,12 @@ public final class LinearHashIndex implements HashIndex {
 
       Page<HashDirectoryHeader> header = bufferManager.pinPage(this.headID);
       HashDirectoryHeader.setSize(header, ++this.numEntries);
+      bufferManager.unpinPage(header, UnpinMode.DIRTY);
 
       if (calcLoadFactor() > this.maxLoadFactor){
          // TODO: split bucket
 
-         HashDirectoryHeader.setNumberBuckets(header, ++this.numBuckets);
       }
-
-      bufferManager.unpinPage(header, UnpinMode.DIRTY);
    }
 
    @Override
@@ -257,14 +255,36 @@ public final class LinearHashIndex implements HashIndex {
       if (removeFromBucket(hash, new DataEntry(key, rid, this.entrySize))) {
          Page<HashDirectoryHeader> header = bufferManager.pinPage(this.headID);
          HashDirectoryHeader.setSize(header, --this.numEntries);
+         bufferManager.unpinPage(header, UnpinMode.DIRTY);
 
          if (calcLoadFactor() < this.minLoadFactor && this.numBuckets > 1) {
-            // TODO: merge bucket
 
-            HashDirectoryHeader.setNumberBuckets(header, --this.numBuckets);
+            PageID bucketHeadId = removeBucket();
+            if (bucketHeadId.isValid()) {
+
+               PageID mergeBucketId = getBucketID(this.numBuckets);
+
+               BucketChainIterator iterator = new BucketChainIterator(bufferManager, bucketHeadId, this.entrySize);
+               while(iterator.hasNext()) {
+                  DataEntry entry = iterator.next();
+
+                  insertIntoBucket(mergeBucketId, entry);
+               }
+
+               Page<BucketPage> bucketPage = bufferManager.pinPage(bucketHeadId);
+               PageID nextPageId = BucketPage.getNextPagePointer(bucketPage);
+
+               while (nextPageId.isValid()) {
+                  Page<BucketPage> nextPage = bufferManager.pinPage(nextPageId);
+                  bufferManager.freePage(bucketPage);
+
+                  bucketPage = nextPage;
+                  nextPageId = BucketPage.getNextPagePointer(bucketPage);
+               }
+
+               bufferManager.freePage(bucketPage);
+            }
          }
-
-         bufferManager.unpinPage(header, UnpinMode.DIRTY);
          return true;
       } else {
          return false;
@@ -607,7 +627,7 @@ public final class LinearHashIndex implements HashIndex {
          bufferManager.unpinPage(page, UnpinMode.DIRTY);
       }
 
-      numBuckets++;
+      this.numBuckets++;
 
       Page<HashDirectoryHeader> header = bufferManager.pinPage(this.headID);
       HashDirectoryHeader.setNumberBuckets(header, numBuckets);
@@ -654,7 +674,7 @@ public final class LinearHashIndex implements HashIndex {
          bufferManager.freePage(page);
       }
 
-      numBuckets--;
+      this.numBuckets--;
       Page<HashDirectoryHeader> header = bufferManager.pinPage(this.headID);
       HashDirectoryHeader.setNumberBuckets(header, numBuckets);
       bufferManager.unpinPage(header, UnpinMode.DIRTY);
