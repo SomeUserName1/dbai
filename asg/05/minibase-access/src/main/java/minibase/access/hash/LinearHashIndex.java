@@ -243,8 +243,53 @@ public final class LinearHashIndex implements HashIndex {
       bufferManager.unpinPage(header, UnpinMode.DIRTY);
 
       if (calcLoadFactor() > this.maxLoadFactor){
-         // TODO: split bucket
 
+         Page<BucketPage> lowerBucket = BucketPage.newPage(bufferManager);
+         Page<BucketPage> upperBucket = BucketPage.newPage(bufferManager);
+         PageID lowerBucketId = lowerBucket.getPageID();
+         PageID upperBucketId = upperBucket.getPageID();
+
+         BucketChainIterator iterator = new BucketChainIterator(bufferManager, bucketId, this.entrySize);
+
+         int level = this.getLevel();
+
+         while (iterator.hasNext()) {
+            DataEntry entry = iterator.next();
+
+            if (entry.getSearchKey().getHash(level) == hash) {
+               insertIntoBucket(lowerBucketId, entry);
+            } else {
+               insertIntoBucket(upperBucketId, entry);
+            }
+         }
+
+         Page<BucketPage> bucketPage = bufferManager.pinPage(bucketId);
+         bucketId = BucketPage.getNextPagePointer(bucketPage);
+
+         while (bucketId.isValid()) {
+            Page<BucketPage> nextPage = bufferManager.pinPage(bucketId);
+            bufferManager.freePage(bucketPage);
+
+            bucketPage = nextPage;
+            bucketId =  BucketPage.getNextPagePointer(bucketPage);
+         }
+         bufferManager.freePage(bucketPage);
+
+         if (BucketPage.getNumEntries(lowerBucket) != 0) {
+            setBucketID(hash, lowerBucketId);
+            bufferManager.unpinPage(lowerBucket, UnpinMode.DIRTY);
+         } else {
+            setBucketID(hash, PageID.INVALID);
+            bufferManager.freePage(lowerBucket);
+         }
+
+         if (BucketPage.getNumEntries(upperBucket) != 0) {
+            setBucketID(this.numBuckets - 1, upperBucketId);
+            bufferManager.unpinPage(upperBucket, UnpinMode.DIRTY);
+         } else {
+            setBucketID(this.numBuckets - 1, PageID.INVALID);
+            bufferManager.freePage(upperBucket);
+         }
       }
    }
 
