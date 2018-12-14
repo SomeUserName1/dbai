@@ -89,8 +89,13 @@ public final class LinearHashIndex implements HashIndex {
     */
    public static LinearHashIndex createIndex(final BufferManager bufferManager, final String fileName,
          final int searchKeyLength) {
-      // TODO Implement this method!
-      return null;
+
+      final PageID headID = initializeHeaderPage(bufferManager, DEFAULT_MIN_NUM_BUCKETS, DEFAULT_MIN_LOAD_FACTOR,
+              DEFAULT_MAX_LOAD_FACTOR, searchKeyLength);
+      initializeDirectory(bufferManager, headID);
+
+      bufferManager.getDiskManager().addFileEntry(fileName, headID);
+      return new LinearHashIndex(bufferManager, Optional.of(fileName), headID);
    }
 
    /**
@@ -105,8 +110,11 @@ public final class LinearHashIndex implements HashIndex {
     */
    public static LinearHashIndex createTemporaryIndex(final BufferManager bufferManager,
          final int searchKeyLength) {
-      // TODO Implement this method!
-      return null;
+      final PageID headID = initializeHeaderPage(bufferManager, DEFAULT_MIN_NUM_BUCKETS, DEFAULT_MIN_LOAD_FACTOR,
+              DEFAULT_MAX_LOAD_FACTOR, searchKeyLength);
+      initializeDirectory(bufferManager, headID);
+
+      return new LinearHashIndex(bufferManager, Optional.empty(), headID);
    }
 
    /**
@@ -128,8 +136,11 @@ public final class LinearHashIndex implements HashIndex {
    public static LinearHashIndex createTemporaryIndex(final BufferManager bufferManager,
          final int searchKeyLength, final int minNumBuckets, final float minLoadFactor,
          final float maxLoadFactor) {
-      // TODO Implement this method!
-      return null;
+      final PageID headID = initializeHeaderPage(bufferManager, minNumBuckets,
+              minLoadFactor, maxLoadFactor, searchKeyLength);
+      initializeDirectory(bufferManager, headID);
+
+      return new LinearHashIndex(bufferManager, Optional.empty(), headID);
    }
 
    /**
@@ -160,36 +171,104 @@ public final class LinearHashIndex implements HashIndex {
 
    @Override
    public void delete() {
-      // TODO Implement this method!
+      final Page<HashDirectoryHeader> header = bufferManager.pinPage(headID);
+      int numBuckets = HashDirectoryHeader.getNumberBuckets(header);
+      bufferManager.unpinPage(header, UnpinMode.CLEAN);
+      Page<HashDirectoryPage> page = bufferManager.pinPage(headID);
+      int pos = 0;
+
+      while (numBuckets > 0) {
+         if (pos >= LinearHashIndex.calcNumPageIDPerPage(HashDirectoryPage.getWritableSize(page))) {
+            final Page<HashDirectoryPage> nextPage = bufferManager.pinPage(HashDirectoryPage.getNextPagePointer(page));
+            bufferManager.freePage(page);
+            page = nextPage;
+            pos = 0;
+         }
+         PageID pageID = HashDirectoryPage.readPageID(page, pos);
+         if(pageID.isValid()) {
+            // free the whole bucket
+            Page<BucketPage> bucketPage = bufferManager.pinPage(pageID);
+            PageID nextBucketPageId = BucketPage.getNextPagePointer(bucketPage);
+            while (nextBucketPageId.isValid()) {
+               Page<BucketPage> nextBucketPage = bufferManager.pinPage(nextBucketPageId);
+               bufferManager.freePage(bucketPage);
+
+               bucketPage = nextBucketPage;
+               nextBucketPageId = BucketPage.getNextPagePointer(bucketPage);
+            }
+            bufferManager.freePage(bucketPage);
+         }
+         --numBuckets;
+         pos += PageID.SIZE;
+      }
+
+      bufferManager.freePage(page);
+
+      if (this.fileName.isPresent()) {
+         bufferManager.getDiskManager().deleteFileEntry(fileName.get());
+      }
+      this.headID = null;
+      this.numBuckets = 0;
    }
 
    @Override
    public Optional<DataEntry> search(final SearchKey key) {
-      // TODO Implement this method!
-      return null;
+      final int hash = key.getHash(this.getLevel());
+
+      PageID bucketId = getBucketID(hash);
+      BucketChainIterator iterator = new BucketChainIterator(bufferManager, bucketId, this.entrySize);
+
+      while (iterator.hasNext()) {
+         DataEntry entry = iterator.next();
+         if (entry.equals(key)) {
+            return Optional.of(entry);
+         }
+      }
+
+      return Optional.empty();
    }
 
    @Override
    public void insert(final SearchKey key, final RecordID rid) {
-      // TODO Implement this method!
+      final int hash = key.getHash(this.getLevel());
+
+      PageID bucketId = getBucketID(hash);
+      insertIntoBucket(bucketId, new DataEntry(key, rid, this.entrySize));
+
+      Page<HashDirectoryHeader> header = bufferManager.pinPage(this.headID);
+      HashDirectoryHeader.setSize(header, ++this.numEntries);
+
+      if (calcLoadFactor() > this.maxLoadFactor){
+         // TODO: split bucket
+         
+      }
+
+      bufferManager.unpinPage(header, UnpinMode.DIRTY);
    }
 
    @Override
    public boolean remove(final SearchKey key, final RecordID rid) {
-      // TODO Implement this method!
-      return true;
+      final int hash = key.getHash(this.getLevel());
+
+      if (removeFromBucket(hash, new DataEntry(key, rid, this.entrySize))) {
+         if (calcLoadFactor() < this.minLoadFactor) {
+            // TODO: merge bucket
+
+         }
+         return true;
+      } else {
+         return false;
+      }
    }
 
    @Override
    public HashIndexScan openScan() {
-      // TODO Implement this method!
-      return null;
+      return new HashIndexScan(this, bufferManager, this.entrySize);
    }
 
    @Override
    public IndexScan openScan(final SearchKey key) {
-      // TODO Implement this method!
-      return null;
+      return new KeyScan(this.bufferManager, key, this.getBucketID(key.getHash(this.getLevel())), this.entrySize);
    }
 
    /**
@@ -350,4 +429,328 @@ public final class LinearHashIndex implements HashIndex {
    private static int calcNumPageIDPerPage(final short writableSize) {
        return writableSize / PageID.SIZE;
    }
+
+   /**
+    * This Method initializes a new HeaderPage
+    *
+    * @param bufferManager
+    *          buffer manager
+    * @param searchKeyLength
+    *          max search key length
+    * @return
+    *          page id of created header page
+    */
+   private final static PageID initializeHeaderPage(final BufferManager bufferManager, final int minNumBuckets,
+                                                    final float minLoadFactor, final float maxLoadFactor,
+                                                    final int searchKeyLength) {
+      final Page<HashDirectoryHeader> header = HashDirectoryHeader.newPage(bufferManager, minNumBuckets,
+               minLoadFactor, maxLoadFactor, DataEntry.getLength(searchKeyLength));
+      final PageID headID = header.getPageID();
+      bufferManager.unpinPage(header, UnpinMode.DIRTY);
+      return headID;
+   }
+
+   /**
+    * This Method initializes the Directory
+    *
+    * @param bufferManager
+    *          buffer manager
+    * @param headID
+    *          id of header page
+    */
+   private static void initializeDirectory(final BufferManager bufferManager, PageID headID) {
+
+      final Page<HashDirectoryHeader> header = bufferManager.pinPage(headID);
+      int numBuckets = HashDirectoryHeader.getNumberBuckets(header);
+      bufferManager.unpinPage(header, UnpinMode.CLEAN);
+      Page<HashDirectoryPage> page = bufferManager.pinPage(headID);
+      int pos = 0;
+
+      while (numBuckets > 0) {
+         if (pos >= LinearHashIndex.calcNumPageIDPerPage(HashDirectoryPage.getWritableSize(page))) {
+            final Page<HashDirectoryPage> newPage = HashDirectoryPage.newPage(bufferManager);
+            HashDirectoryPage.setNextPagePointer(page, newPage.getPageID());
+            bufferManager.unpinPage(page, UnpinMode.DIRTY);
+            page = newPage;
+            pos = 0;
+         }
+         HashDirectoryPage.writePageID(page, pos, PageID.INVALID);
+         --numBuckets;
+         pos += PageID.SIZE;
+      }
+
+      bufferManager.unpinPage(page, UnpinMode.DIRTY);
+   }
+
+
+   /**
+    * get the PageID for a given hash
+    *
+    * @param hash
+    *          the hash to return the PageID for
+    * @return
+    *          PageID
+    */
+   private PageID getBucketID(int hash) {
+
+      if (hash >= (0x1 << this.getLevel())) {
+         throw new IllegalArgumentException();
+      }
+
+
+      if (hash >= this.numBuckets) {
+         hash = hash / 2;
+      }
+
+      Page<HashDirectoryPage> page = bufferManager.pinPage(this.headID);
+
+      int pageSize = LinearHashIndex.calcNumPageIDPerPage(HashDirectoryPage.getWritableSize(page));
+
+      while (hash >= pageSize) {
+
+         hash -= pageSize;
+         Page<HashDirectoryPage> newPage = bufferManager.pinPage(HashDirectoryPage.getNextPagePointer(page));
+         bufferManager.unpinPage(page, UnpinMode.CLEAN);
+
+         page = newPage;
+         pageSize = LinearHashIndex.calcNumPageIDPerPage(HashDirectoryPage.getWritableSize(page));
+      }
+
+      PageID pageId = HashDirectoryPage.readPageID(page,hash * PageID.SIZE);
+      bufferManager.unpinPage(page, UnpinMode.CLEAN);
+
+      return pageId;
+   }
+
+   /**
+    * this method sets a PageID in the Directory
+    *
+    * @param hash
+    *          the hash to set the PageID for
+    * @param pageId
+    *          the PageID to set for the hash
+    */
+   private void setBucketID(int hash, final PageID pageId) {
+
+      if (hash >= (0x1 << this.getLevel())) {
+         throw new IllegalArgumentException();
+      }
+
+
+      if (hash >= this.numBuckets) {
+         hash = hash / 2;
+      }
+
+      Page<HashDirectoryPage> page = bufferManager.pinPage(this.headID);
+
+      int pageSize = LinearHashIndex.calcNumPageIDPerPage(HashDirectoryPage.getWritableSize(page));
+
+      while (hash >= pageSize) {
+
+         hash -= pageSize;
+         Page<HashDirectoryPage> newPage = bufferManager.pinPage(HashDirectoryPage.getNextPagePointer(page));
+         bufferManager.unpinPage(page, UnpinMode.CLEAN);
+
+         page = newPage;
+         pageSize = LinearHashIndex.calcNumPageIDPerPage(HashDirectoryPage.getWritableSize(page));
+      }
+
+      HashDirectoryPage.writePageID(page, hash * PageID.SIZE, pageId);
+      bufferManager.unpinPage(page, UnpinMode.DIRTY);
+   }
+
+   /**
+    * this method adds a bucket to the hash index
+    * the returned page is pinned!
+    *
+    * @return
+    *          the Page that represents the added Bucket
+    */
+   private void addBucket(PageID pageID) {
+
+      int hash = numBuckets;
+
+      Page<HashDirectoryPage> page = bufferManager.pinPage(this.headID);
+
+      int pageSize = LinearHashIndex.calcNumPageIDPerPage(HashDirectoryPage.getWritableSize(page));
+
+      while (hash > pageSize) {
+
+         hash -= pageSize;
+         Page<HashDirectoryPage> nextPage = bufferManager.pinPage(HashDirectoryPage.getNextPagePointer(page));
+         bufferManager.unpinPage(page, UnpinMode.CLEAN);
+
+         page = nextPage;
+         pageSize = LinearHashIndex.calcNumPageIDPerPage(HashDirectoryPage.getWritableSize(page));
+      }
+
+      if (hash < pageSize) {
+         HashDirectoryPage.writePageID(page, hash * PageID.SIZE, pageID);
+         bufferManager.unpinPage(page, UnpinMode.CLEAN);
+      } else {
+         hash = 0;
+         Page<HashDirectoryPage> newPage = HashDirectoryPage.newPage(bufferManager);
+         HashDirectoryPage.setNextPagePointer(page, newPage.getPageID());
+         bufferManager.unpinPage(page, UnpinMode.DIRTY);
+         page = newPage;
+
+         HashDirectoryPage.writePageID(page, 0, pageID);
+         bufferManager.unpinPage(page, UnpinMode.DIRTY);
+      }
+
+      numBuckets++;
+
+      Page<HashDirectoryHeader> header = bufferManager.pinPage(this.headID);
+      HashDirectoryHeader.setNumberBuckets(header, numBuckets);
+      bufferManager.unpinPage(header, UnpinMode.DIRTY);
+   }
+
+   /**
+    * removes the last bucket from the directory
+    *
+    * @return
+    *          the PageID of the removed bucket
+    */
+   private PageID removeBucket() {
+
+      int hash = numBuckets;
+
+      Page<HashDirectoryPage> page = bufferManager.pinPage(this.headID);
+
+      int pageSize = LinearHashIndex.calcNumPageIDPerPage(HashDirectoryPage.getWritableSize(page));
+
+      while (hash > pageSize) {
+
+         hash -= pageSize;
+         Page<HashDirectoryPage> nextPage = bufferManager.pinPage(HashDirectoryPage.getNextPagePointer(page));
+         bufferManager.unpinPage(page, UnpinMode.CLEAN);
+
+         page = nextPage;
+         pageSize = LinearHashIndex.calcNumPageIDPerPage(HashDirectoryPage.getWritableSize(page));
+      }
+
+      PageID bucketId;
+
+      if (hash < pageSize){
+         bucketId = HashDirectoryPage.readPageID(page, hash * PageID.SIZE);
+         HashDirectoryPage.writePageID(page, hash * PageID.SIZE, PageID.INVALID);
+         bufferManager.unpinPage(page, UnpinMode.DIRTY);
+      } else {
+         Page<HashDirectoryPage> nextPage = bufferManager.pinPage(HashDirectoryPage.getNextPagePointer(page));
+         HashDirectoryPage.setNextPagePointer(page, PageID.INVALID);
+         bufferManager.unpinPage(page, UnpinMode.DIRTY);
+
+         page = nextPage;
+         bucketId = HashDirectoryPage.readPageID(page, 0);
+         bufferManager.freePage(page);
+      }
+
+      numBuckets--;
+      Page<HashDirectoryHeader> header = bufferManager.pinPage(this.headID);
+      HashDirectoryHeader.setNumberBuckets(header, numBuckets);
+      bufferManager.unpinPage(header, UnpinMode.DIRTY);
+
+      return bucketId;
+   }
+
+   /**
+    * Tries to insert entry into bucket. (copied from StaticHashIndex.java)
+    *
+    * @param bucketHeadId
+    *           the bucket to insert into
+    * @param entry
+    *           the entry to insert
+    * @return whether the
+    */
+   private PageID insertIntoBucket(final PageID bucketHeadId, final DataEntry entry) {
+      Page<BucketPage> page;
+      if (!bucketHeadId.isValid()) {
+         page = BucketPage.newPage(this.bufferManager);
+      } else {
+         page = this.bufferManager.pinPage(bucketHeadId);
+      }
+
+      if (BucketPage.hasSpaceLeft(page, this.entrySize)) {
+         BucketPage.appendDataEntry(page, entry, this.entrySize);
+         final PageID returnId = page.getPageID();
+         this.bufferManager.unpinPage(page, UnpinMode.DIRTY);
+         return returnId;
+      }
+      this.bufferManager.unpinPage(page, UnpinMode.CLEAN);
+      page = BucketPage.newPage(this.bufferManager);
+      final PageID newHead = page.getPageID();
+      BucketPage.setOverflowPointer(page, bucketHeadId);
+      BucketPage.appendDataEntry(page, entry, this.entrySize);
+      this.bufferManager.unpinPage(page, UnpinMode.DIRTY);
+      return newHead;
+   }
+
+
+   /**
+    * Deletes the given entry from the bucket. (copied from StaticHashIndex.java)
+    *
+    * @param hash
+    *           hash of the bucket to delete from
+    * @param entry
+    *           entry to delete
+    * @return {@code true} if the entry was deleted, {@code false} otherwise
+    */
+   private boolean removeFromBucket(final int hash, final DataEntry entry) {
+      final PageID firstPageID = this.getBucketID(hash);
+      if (!firstPageID.isValid()) {
+         return false;
+      }
+      final Page<BucketPage> primaryPage = this.bufferManager.pinPage(firstPageID);
+
+      // iterate over bucket chain
+      PageID deleteFromID = firstPageID;
+      while (deleteFromID.isValid()) {
+         final Page<BucketPage> deleteFrom = this.bufferManager.pinPage(deleteFromID);
+         // iterate over every entry on the page
+         for (int i = 0; i < BucketPage.getNumEntries(deleteFrom); ++i) {
+            final DataEntry e = BucketPage.readDataEntryAt(deleteFrom, i, entry.getEntrySize());
+            if (!entry.equals(e)) {
+               continue;
+            }
+            // we have found our entry to remove
+            if (deleteFromID.equals(firstPageID)) {
+               // we are still on the primary page of the bucket
+               BucketPage.removeDataEntryAt(deleteFrom, i, this.entrySize);
+            } else {
+               // we are on an overflow page, need to delete the entry there and get a new entry
+               // from the primary page so our invariant that overflow pages are always full still holds
+               BucketPage.moveLastEntryTo(primaryPage, deleteFrom, i, this.entrySize);
+            }
+            // the overflow page is now full again
+            this.bufferManager.unpinPage(deleteFrom, UnpinMode.DIRTY);
+            // check if primary page is now empty and chain needs to be shrunk
+            if (BucketPage.getNumEntries(primaryPage) == 0) {
+               final PageID nextID = BucketPage.getNextPagePointer(primaryPage);
+               this.bufferManager.freePage(primaryPage);
+               this.setBucketID(hash, nextID);
+            } else {
+               // the primary page has still entries left
+               this.bufferManager.unpinPage(primaryPage, UnpinMode.DIRTY);
+            }
+            return true;
+         }
+         // move along the chain
+         deleteFromID = BucketPage.getNextPagePointer(deleteFrom);
+         this.bufferManager.unpinPage(deleteFrom, UnpinMode.CLEAN);
+      }
+      this.bufferManager.unpinPage(primaryPage, UnpinMode.CLEAN);
+      return false;
+   }
+
+   /**
+    * calculates the current load factor
+    *
+    * @return
+    *          the current load factor
+    */
+   private float calcLoadFactor() {
+      return ((float)numEntries) / ((float)numBuckets *
+              (float)BucketPage.maxNumEntries(this.entrySize) / (float)this.entrySize);
+   }
+
 }
