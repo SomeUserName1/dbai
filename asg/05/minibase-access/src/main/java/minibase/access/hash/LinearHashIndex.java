@@ -240,7 +240,8 @@ public final class LinearHashIndex implements HashIndex {
 
       if (calcLoadFactor() > this.maxLoadFactor){
          // TODO: split bucket
-         
+
+         HashDirectoryHeader.setNumberBuckets(header, ++this.numBuckets);
       }
 
       bufferManager.unpinPage(header, UnpinMode.DIRTY);
@@ -251,10 +252,16 @@ public final class LinearHashIndex implements HashIndex {
       final int hash = key.getHash(this.getLevel());
 
       if (removeFromBucket(hash, new DataEntry(key, rid, this.entrySize))) {
-         if (calcLoadFactor() < this.minLoadFactor) {
+         Page<HashDirectoryHeader> header = bufferManager.pinPage(this.headID);
+         HashDirectoryHeader.setSize(header, --this.numEntries);
+
+         if (calcLoadFactor() < this.minLoadFactor && this.numBuckets > 1) {
             // TODO: merge bucket
 
+            HashDirectoryHeader.setNumberBuckets(header, --this.numBuckets);
          }
+
+         bufferManager.unpinPage(header, UnpinMode.DIRTY);
          return true;
       } else {
          return false;
@@ -560,8 +567,7 @@ public final class LinearHashIndex implements HashIndex {
    }
 
    /**
-    * this method adds a bucket to the hash index
-    * the returned page is pinned!
+    * this method adds a bucket to the end of the index
     *
     * @return
     *          the Page that represents the added Bucket
