@@ -1,6 +1,9 @@
 *idea/
 *settings/
 
+*.log
+*.aux
+*.out
 *.iml
 .project
 .classpath
