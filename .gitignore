@@ -1,6 +1,7 @@
 *idea/
 *settings/
 
+*.iml
 .project
 .classpath
 .checkstyle
