@@ -1,6 +1,7 @@
 *idea/
 *settings/
 
+*.jar
 *.log
 *.aux
 *.out
