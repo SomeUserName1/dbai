@@ -1,4 +1,13 @@
-
+/*
+ * @(#)RunPage.java   1.0   Jan 10, 2019
+ *
+ * Copyright (c) 1996-1997 University of Wisconsin.
+ * Copyright (c) 2006 Purdue University.
+ * Copyright (c) 2013-2018 University of Konstanz.
+ *
+ * This software is the proprietary information of the above-mentioned institutions.
+ * Use is subject to license terms. Please refer to the included copyright notice.
+ */
 package minibase.access.file;
 
 import java.util.Arrays;
@@ -23,7 +32,7 @@ public final class RunPage implements PageType {
    }
 
    /**
-    * Initializes a RunPage and sets the next pointer of the previous page accordingly
+    * Initializes a RunPage and sets the next pointer of the previous page accordingly.
     *
     * @param bufferManager
     *           the BufferManager used to get a Page for the RunPage and the previously used page
@@ -32,8 +41,8 @@ public final class RunPage implements PageType {
     * @return
     *       the freshly initialized RunPage
     */
+   @SuppressWarnings("unchecked")
    static Page<RunPage> newPage(final BufferManager bufferManager, final PageID prevPageID) {
-      @SuppressWarnings("unchecked")
       final Page<RunPage> newPage = (Page<RunPage>) bufferManager.newPage();
       RunPage.setNextPage(newPage, PageID.INVALID);
       if (prevPageID != PageID.INVALID) {
@@ -55,10 +64,9 @@ public final class RunPage implements PageType {
     *           length of the record
     * @return the record as array of bytes
     */
-   static byte[] getTuple(final Page<RunPage> page, final int pos, final int recordLength) {
-      final int pageOffset = RunPage.tupleOffset(pos, recordLength);
-      final byte[] output = Arrays.copyOfRange(page.getData(), pageOffset, pageOffset + recordLength);
-      return output;
+   static byte[] getTuple(final Page<RunPage> page, final int position, final int recordLength) {
+      final int pageOffset = RunPage.tupleOffset(position, recordLength);
+      return Arrays.copyOfRange(page.getData(), pageOffset, pageOffset + recordLength);
    }
    
    /**
@@ -119,7 +127,7 @@ public final class RunPage implements PageType {
     * @param id
     *           new ID
     */
-   static void setNextPage(final Page<RunPage> page, final PageID id) {
+   private static void setNextPage(final Page<RunPage> page, final PageID id) {
       page.writePageID(DiskManager.PAGE_SIZE - PageID.BYTES, id);
    }
 
@@ -143,7 +151,7 @@ public final class RunPage implements PageType {
     *           length of each record in the page
     * @return Maximum number of records
     */
-   public static int maxNumberOfRecords(final int recordLength) {
+   static int maxNumberOfRecords(final int recordLength) {
       return (DiskManager.PAGE_SIZE - 4) / recordLength;
    }
 }

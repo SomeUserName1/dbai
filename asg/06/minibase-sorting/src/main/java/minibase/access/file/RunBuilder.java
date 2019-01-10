@@ -1,4 +1,13 @@
-
+/*
+ * @(#)RunBuilder.java   1.0   Dec 29, 2018
+ *
+ * Copyright (c) 1996-1997 University of Wisconsin.
+ * Copyright (c) 2006 Purdue University.
+ * Copyright (c) 2013-2018 University of Konstanz.
+ *
+ * This software is the proprietary information of the above-mentioned institutions.
+ * Use is subject to license terms. Please refer to the included copyright notice.
+ */
 package minibase.access.file;
 
 import minibase.storage.buffer.BufferManager;
@@ -68,7 +77,8 @@ public final class RunBuilder {
      */
     public void appendRecord(final byte[] record) {
         if ((this.numRecords % maxRecordsPerPage) == 0 && this.numRecords != 0) {
-            // The current page is full. Add a new page, adjusting pointers, unpin the previous page and set the new page to be the current one
+            // The current page is full. Add a new page, adjusting pointers,
+            // unpin the previous page and set the new page to be the current one
             final Page<RunPage> newPage = RunPage.newPage(this.bufferManager, this.current.getPageID());
             this.bufferManager.unpinPage(this.current, UnpinMode.DIRTY);
             this.current = newPage;

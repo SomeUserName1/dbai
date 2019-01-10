@@ -1,5 +1,5 @@
 /*
- * @(#)ExternalSort.java   1.0   Dec 18, 2019
+ * @(#)ExternalSort.java   1.0   Jan 10, 2019
  *
  * Copyright (c) 1996-1997 University of Wisconsin.
  * Copyright (c) 2006 Purdue University.
@@ -8,6 +8,7 @@
  * This software is the proprietary information of the above-mentioned institutions.
  * Use is subject to license terms. Please refer to the included copyright notice.
  */
+// TODO rework
 package minibase.query.evaluator;
 
 import java.util.ArrayList;
@@ -72,7 +73,7 @@ public class ExternalSort extends AbstractOperator {
       // Iterator to get input values from
       final TupleIterator inputIterator = this.input.open();
       // List of all runs which are then given to the tuple iterator at the and
-      final ArrayList<Run> runs0 = new ArrayList<Run>();
+      final ArrayList<Run> runs0 = new ArrayList<>();
       // Reused to generate the runs with
       RunBuilder runBuilder = new RunBuilder(this.bufferManager, this.schema.getLength());
       
@@ -98,7 +99,7 @@ public class ExternalSort extends AbstractOperator {
 
       try {
          inputIterator.close();
-      } catch (final UnsupportedOperationException e) {
+      } catch (final UnsupportedOperationException ignored) {
       }
       // Return an TupleIterator representing a Tree of Losers.
       return new TreeOfLosers(runs0, this.comparator, this.schema.getLength(), this.bufferManager);

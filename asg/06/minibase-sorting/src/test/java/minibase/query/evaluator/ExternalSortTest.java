@@ -1,3 +1,13 @@
+/*
+ * @(#)ExternalSortTest.java   1.0   Jan 10, 2019
+ *
+ * Copyright (c) 1996-1997 University of Wisconsin.
+ * Copyright (c) 2006 Purdue University.
+ * Copyright (c) 2013-2018 University of Konstanz.
+ *
+ * This software is the proprietary information of the above-mentioned institutions.
+ * Use is subject to license terms. Please refer to the included copyright notice.
+ */
 package minibase.query.evaluator;
 
 import static org.junit.Assert.assertEquals;
@@ -28,10 +38,11 @@ import minibase.storage.buffer.PageID;
 import minibase.util.Convert;
 
 /**
- * Test according to ex.1 & ex.5 
+ * Test according to ex.1 & ex.5 .
  *
  * @author Fabian Klopfer, Simon Suckut
  */
+// TODO rem permutations, bytewise comparator?
 public class ExternalSortTest extends BaseTest {
 
    /** number of tuples to sort. */
@@ -98,14 +109,14 @@ public class ExternalSortTest extends BaseTest {
             this.duplicatePropability, this.numTuplesToSort);
 
       // All field combinations of the schema to test
-      final ArrayList<ArrayList<Integer>> allTestingOrders = new ArrayList<ArrayList<Integer>>();
+      final ArrayList<ArrayList<Integer>> allTestingOrders = new ArrayList<>();
 
       // Powerset of fields
       final ArrayList<ArrayList<Integer>> result = powerset(
             new int[] { 0, 1, 2, 3 }/* , 0, new ArrayList<Integer>(), result */);
       // For each set in powerset build all permutations
       for (ArrayList<Integer> set : result) {
-         final ArrayList<ArrayList<Integer>> permutations = this.generatePerm(set, new ArrayList<Integer>());
+         final ArrayList<ArrayList<Integer>> permutations = this.generatePerm(set, new ArrayList<>());
          allTestingOrders.addAll(permutations);
          System.out.println(set);
       }
@@ -121,12 +132,12 @@ public class ExternalSortTest extends BaseTest {
          }
 
          final boolean[][] sortOrders = this.buildSortOrders(set.size());
-         for (int i = 0; i < sortOrders.length; i++) {
+         for (boolean[] sortOrder : sortOrders) {
             System.out.println("Field Permutation: " + set + "\t\t\t SortOrder Permutation: "
-                  + Arrays.toString(sortOrders[i]));
+                    + Arrays.toString(sortOrder));
 
             final RecordComparator recordComparator = new TupleComparator(this.schema, testingOrder,
-                  sortOrders[i]);
+                    sortOrder);
             // Test with random input
             this.testOverallSortOrder(inputOperatorRandom, recordComparator);
 
@@ -157,7 +168,7 @@ public class ExternalSortTest extends BaseTest {
       // final RecordComparator recordComparator = new ByteArrayComparator(schema.getLength());
 
       // Collection with all tuples in the random input
-      final ArrayList<byte[]> allTuplesFromInput = new ArrayList<byte[]>(this.numTuplesToSort);
+      final ArrayList<byte[]> allTuplesFromInput = new ArrayList<>(this.numTuplesToSort);
       final TupleIterator inputScan = inputOperator.open();
       while (inputScan.hasNext()) {
          allTuplesFromInput.add(inputScan.next());
@@ -173,7 +184,7 @@ public class ExternalSortTest extends BaseTest {
       // Check if pass0-runs are sorted and no tuple is lost
       int totalTuples = 0;
       final TreeOfLosers tol = (TreeOfLosers) sort.open();
-      final ArrayList<byte[]> allTuplesInTheCombinedRun = new ArrayList<byte[]>(this.numTuplesToSort);
+      final ArrayList<byte[]> allTuplesInTheCombinedRun = new ArrayList<>(this.numTuplesToSort);
       for (Run run : tol.getRuns0()) {
          this.checkRunIntegrity(run, recordComparator, this.schema);
          totalTuples += run.getLength();
@@ -188,7 +199,7 @@ public class ExternalSortTest extends BaseTest {
       tol.close();
 
       // Check if the concatenated pass 0 runs in sorted order equals the sorted input
-      final ArrayList<byte[]> inputCopy1 = new ArrayList<byte[]>(allTuplesFromInput);
+      final ArrayList<byte[]> inputCopy1 = new ArrayList<>(allTuplesFromInput);
       while (0 < allTuplesInTheCombinedRun.size()) {
          // Do a manual indexOf Operation as byte[] is not proper compared by List.contains()
 
@@ -212,7 +223,7 @@ public class ExternalSortTest extends BaseTest {
       final TupleIterator sortScan = sort.open();
 
       byte[] currentMaximum = null;
-      final ArrayList<byte[]> inputCopy2 = new ArrayList<byte[]>(allTuplesFromInput);
+      final ArrayList<byte[]> inputCopy2 = new ArrayList<>(allTuplesFromInput);
       while (sortScan.hasNext()) {
          final byte[] nextTuple = sortScan.next();
 
@@ -250,7 +261,7 @@ public class ExternalSortTest extends BaseTest {
       sortScan.close();
       try {
          inputScan.close();
-      } catch (final UnsupportedOperationException e) {
+      } catch (final UnsupportedOperationException ignored) {
       }
    }
 
@@ -281,7 +292,7 @@ public class ExternalSortTest extends BaseTest {
     *           the run to perform the integrity checks on
     * @param comparator
     *           Used to compare the order of the run
-    * @param schema the schme of the input table
+    * @param schema the schema of the input table
     */
    private void checkRunIntegrity(final Run run, final RecordComparator comparator, final Schema schema) {
       // Open scan and check that it is not empty
@@ -312,7 +323,7 @@ public class ExternalSortTest extends BaseTest {
     * @param tuples
     *           How many pages shall the heap file span
     */
-   public void createRandomSailorHeap(final HeapFile heapFile, final int tuples) {
+   private void createRandomSailorHeap(final HeapFile heapFile, final int tuples) {
       // Schema taken from the assignment's Exercise 1
       final Schema schemaStudents = ExternalSortTest.sailorSchema();
 
@@ -333,7 +344,7 @@ public class ExternalSortTest extends BaseTest {
     * 
     * @return The created schema
     */
-   public static Schema sailorSchema() {
+   private static Schema sailorSchema() {
       return new SchemaBuilder()
             .addField("sid", DataType.INT, DataType.INT.getSize())
             .addField("sname", DataType.VARCHAR, 50)
@@ -349,11 +360,11 @@ public class ExternalSortTest extends BaseTest {
     *           set used to build the power set from.
     * @return the power set of the initial set
     */
-   public static ArrayList<ArrayList<Integer>> powerset(final int[] initialSet) {
+   private static ArrayList<ArrayList<Integer>> powerset(final int[] initialSet) {
       final int cardinalityPowerSet = (int) Math.pow(2, initialSet.length);
-      final ArrayList<ArrayList<Integer>> powerset = new ArrayList<ArrayList<Integer>>(cardinalityPowerSet);
+      final ArrayList<ArrayList<Integer>> powerset = new ArrayList<>(cardinalityPowerSet);
       for (int i = 0; i < cardinalityPowerSet; i++) {
-         final ArrayList<Integer> set = new ArrayList<Integer>(initialSet.length);
+         final ArrayList<Integer> set = new ArrayList<>(initialSet.length);
          for (int j = 0; j < initialSet.length; j++) {
             if ((i & (1 << j)) > 0) {
                set.add(initialSet[j]);
@@ -375,9 +386,10 @@ public class ExternalSortTest extends BaseTest {
     * @return
     *       all permutations of the initial set
     */
-   public ArrayList<ArrayList<Integer>> generatePerm(final ArrayList<Integer> initialSet,
-         final ArrayList<Integer> usedOrder) {
-      final ArrayList<ArrayList<Integer>> returnVal = new ArrayList<ArrayList<Integer>>();
+   @SuppressWarnings("unchecked")
+   private ArrayList<ArrayList<Integer>> generatePerm(final ArrayList<Integer> initialSet,
+                                                      final ArrayList<Integer> usedOrder) {
+      final ArrayList<ArrayList<Integer>> returnVal = new ArrayList<>();
       if (usedOrder.size() == initialSet.size()) {
          returnVal.add(usedOrder);
          return returnVal;
@@ -401,7 +413,7 @@ public class ExternalSortTest extends BaseTest {
     *           How many fields to sort. This will be the size of the output
     * @return Sort orders of lenghth n
     */
-   public boolean[][] buildSortOrders(final int n) {
+   private boolean[][] buildSortOrders(final int n) {
       if (n > 1) {
          final boolean[][] recursed = this.buildSortOrders(n - 1);
          final boolean[][] newArray = new boolean[recursed.length * 2][];
@@ -438,7 +450,7 @@ public class ExternalSortTest extends BaseTest {
        * @param heapFile the heap file
        * @param schema the schema
        */
-      public HeapFileOperatorWrapper(final Schema schema, final HeapFile heapFile) {
+      HeapFileOperatorWrapper(final Schema schema, final HeapFile heapFile) {
          this.schema = schema;
          this.heapFile = heapFile;
       }
@@ -470,7 +482,7 @@ public class ExternalSortTest extends BaseTest {
        * @param heapFile
        *           File to iterate over.
        */
-      public FileScanTupleIteratorWrapper(final HeapFile heapFile) {
+      FileScanTupleIteratorWrapper(final HeapFile heapFile) {
          this.fileScan = heapFile.openScan();
       }
 

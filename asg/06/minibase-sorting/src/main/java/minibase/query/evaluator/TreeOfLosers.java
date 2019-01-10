@@ -1,5 +1,5 @@
 /*
- * @(#)TreeOfLosers.java   1.0   Dec 18, 2019
+ * @(#)TreeOfLosers.java   1.0   Jan 10, 2019
  *
  * Copyright (c) 1996-1997 University of Wisconsin.
  * Copyright (c) 2006 Purdue University.
@@ -8,6 +8,7 @@
  * This software is the proprietary information of the above-mentioned institutions.
  * Use is subject to license terms. Please refer to the included copyright notice.
  */
+// TODO rework
 package minibase.query.evaluator;
 
 import java.util.ArrayList;
@@ -57,7 +58,7 @@ public class TreeOfLosers implements TupleIterator {
    TreeOfLosers(final ArrayList<Run> runs0, final RecordComparator recordComparator, final int recordLength,
          final BufferManager bufferManager) {
       this.runs0 = runs0;
-      this.runsScan0 = new ArrayList<TupleIterator>();
+      this.runsScan0 = new ArrayList<>();
       this.bufferManager = bufferManager;
       for (Run run : runs0) {
          this.runsScan0
