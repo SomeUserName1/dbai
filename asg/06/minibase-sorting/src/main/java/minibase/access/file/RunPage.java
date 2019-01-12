@@ -42,7 +42,7 @@ public final class RunPage implements PageType {
     *       the freshly initialized RunPage
     */
    @SuppressWarnings("unchecked")
-   static Page<RunPage> newPage(final BufferManager bufferManager, final PageID prevPageID) {
+   public static Page<RunPage> newPage(final BufferManager bufferManager, final PageID prevPageID) {
       final Page<RunPage> newPage = (Page<RunPage>) bufferManager.newPage();
       RunPage.setNextPage(newPage, PageID.INVALID);
       if (prevPageID != PageID.INVALID) {
@@ -64,7 +64,7 @@ public final class RunPage implements PageType {
     *           length of the record
     * @return the record as array of bytes
     */
-   static byte[] getTuple(final Page<RunPage> page, final int position, final int recordLength) {
+   public static byte[] getTuple(final Page<RunPage> page, final int position, final int recordLength) {
       final int pageOffset = RunPage.tupleOffset(position, recordLength);
       return Arrays.copyOfRange(page.getData(), pageOffset, pageOffset + recordLength);
    }
@@ -81,7 +81,7 @@ public final class RunPage implements PageType {
     * @param recordLength
     *           length of the record to set
     */
-   static void setTuple(final Page<RunPage> page, final int pos, final byte[] tuple, final int recordLength) {
+   public static void setTuple(final Page<RunPage> page, final int pos, final byte[] tuple, final int recordLength) {
       final int pageOffset = tupleOffset(pos, recordLength);
       final byte[] data = page.getData();
       System.arraycopy(tuple, 0, data, pageOffset, recordLength);
@@ -101,7 +101,7 @@ public final class RunPage implements PageType {
     * @param maxRecordsPerPage
     *           Maximum number of records in a page
     */
-   static void insertEntry(final Page<RunPage> page, final byte[] tuple, final int numRecordsInRun,
+   public static void insertEntry(final Page<RunPage> page, final byte[] tuple, final int numRecordsInRun,
          final int recordLength, final int maxRecordsPerPage) {
       final int pos = numRecordsInRun % maxRecordsPerPage;
       setTuple(page, pos, tuple, recordLength);

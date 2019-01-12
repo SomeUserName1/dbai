@@ -155,7 +155,7 @@ public class ExternalSortTest extends BaseTest {
 
    /**
     * Creates the random sailor file, sorts it and validates the output.
-    * 
+    *
     * @param inputOperator
     *           The operator delivering the input to sort
     * @param recordComparator
@@ -175,8 +175,8 @@ public class ExternalSortTest extends BaseTest {
       }
 
       // Prepare sort
-      final ExternalSort sort = new ExternalSort(this.schema, this.getBufferManager(), inputOperator,
-            recordComparator, 10);
+      final ExternalSort sort = new ExternalSort(this.getBufferManager(), inputOperator, this.schema, recordComparator,
+              10);
 
       // Build a run out of the sort to check it with checkRunIntegrity
       final RunBuilder runBuilder = new RunBuilder(this.getBufferManager(), this.schema.getLength());
@@ -185,7 +185,7 @@ public class ExternalSortTest extends BaseTest {
       int totalTuples = 0;
       final TreeOfLosers tol = (TreeOfLosers) sort.open();
       final ArrayList<byte[]> allTuplesInTheCombinedRun = new ArrayList<>(this.numTuplesToSort);
-      for (Run run : tol.getRuns0()) {
+      for (Run run : tol.getRuns()) {
          this.checkRunIntegrity(run, recordComparator, this.schema);
          totalTuples += run.getLength();
 
@@ -226,7 +226,11 @@ public class ExternalSortTest extends BaseTest {
       final ArrayList<byte[]> inputCopy2 = new ArrayList<>(allTuplesFromInput);
       while (sortScan.hasNext()) {
          final byte[] nextTuple = sortScan.next();
-
+         System.out.println("Hello FROM HERE");
+         System.out.print(Convert.readInt(nextTuple, 0) + "\t");
+         System.out.print(Convert.readString(nextTuple, 4, 50) + "  \t");
+         System.out.print(Convert.readInt(nextTuple, 54) + "\t");
+         System.out.println(Convert.readFloat(nextTuple, 58));
          // Check if the returned tuple was already contained in the original input
          final int indexOf = this.indexOfOnByteArray(nextTuple, inputCopy2);
          if (indexOf < 0) {
@@ -287,7 +291,7 @@ public class ExternalSortTest extends BaseTest {
 
    /**
     * Verifies the internal sort order inside of one run. Invokes assertion error if false.
-    * 
+    *
     * @param run
     *           the run to perform the integrity checks on
     * @param comparator
@@ -355,7 +359,7 @@ public class ExternalSortTest extends BaseTest {
 
    /**
     * Source: https://www.geeksforgeeks.org/power-set/ .
-    * 
+    *
     * @param initialSet
     *           set used to build the power set from.
     * @return the power set of the initial set
@@ -378,7 +382,7 @@ public class ExternalSortTest extends BaseTest {
 
    /**
     * Builds all permutations of initialSet.
-    * 
+    *
     * @param initialSet
     *           set to build permutations on.
     * @param usedOrder
@@ -408,7 +412,7 @@ public class ExternalSortTest extends BaseTest {
 
    /**
     * Builds sort orders.
-    * 
+    *
     * @param n
     *           How many fields to sort. This will be the size of the output
     * @return Sort orders of lenghth n
@@ -478,7 +482,7 @@ public class ExternalSortTest extends BaseTest {
 
       /**
        * Instantiates a TupleIterator which uses the FileIterator of the given file to direct it's operations.
-       * 
+       *
        * @param heapFile
        *           File to iterate over.
        */

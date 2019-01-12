@@ -27,10 +27,10 @@ import minibase.storage.buffer.PageID;
 public class TreeOfLosers implements TupleIterator {
 
    /** The runs pre sorted by ExternalSort. Each run containing one page of sorted tuples */
-   private final ArrayList<TupleIterator> runsScan0;
+   private final ArrayList<TupleIterator> runScans;
 
    /** List to close all runs after the sorting is finished. */
-   private final ArrayList<Run> runs0;
+   private final ArrayList<Run> runs;
 
    /** True when the object is invalidated and therefore no more methods can be called. */
    private boolean isInvalidated;
@@ -46,7 +46,7 @@ public class TreeOfLosers implements TupleIterator {
    /**
     * Tree of losers creation.
     * 
-    * @param runs0
+    * @param runs
     *           presorted participant pools
     * @param recordComparator
     *           referee used for battles
@@ -55,14 +55,13 @@ public class TreeOfLosers implements TupleIterator {
     * @param bufferManager
     *           the used buffermanager
     */
-   TreeOfLosers(final ArrayList<Run> runs0, final RecordComparator recordComparator, final int recordLength,
+   TreeOfLosers(final ArrayList<Run> runs, final RecordComparator recordComparator, final int recordLength,
          final BufferManager bufferManager) {
-      this.runs0 = runs0;
-      this.runsScan0 = new ArrayList<>();
+      this.runs = runs;
+      this.runScans = new ArrayList<>();
       this.bufferManager = bufferManager;
-      for (Run run : runs0) {
-         this.runsScan0
-               .add(new RunScan(this.bufferManager, run.getFirstPageID(), run.getLength(), recordLength));
+      for (Run run : runs) {
+         this.runScans.add(new RunScan(this.bufferManager, run.getFirstPageID(), run.getLength(), recordLength));
       }
       this.isInvalidated = false;
       this.recordComparator = recordComparator;
@@ -85,12 +84,12 @@ public class TreeOfLosers implements TupleIterator {
    @Override
    public void reset() {
       this.invalidated();
-      for (TupleIterator runScan : this.runsScan0) {
+      for (TupleIterator runScan : this.runScans) {
          runScan.reset();
       }
 
       // build tree of losers
-      TupleIterator[] layer = this.runsScan0.toArray(new TupleIterator[this.runsScan0.size()]);
+      TupleIterator[] layer = this.runScans.toArray(new TupleIterator[this.runScans.size()]);
       while (layer.length > 1) {
          final TupleIterator[] nextLayer = new TupleIterator[layer.length / 2];
          for (int i = 0; i < layer.length / 2; i++) {
@@ -110,11 +109,10 @@ public class TreeOfLosers implements TupleIterator {
    public void close() {
       this.invalidated();
       this.isInvalidated = true;
-      for (TupleIterator runScan : this.runsScan0) {
+      for (TupleIterator runScan : this.runScans) {
          runScan.close();
       }
-      for (Run run : this.runs0) {
-         // run.dealloc();
+      for (Run run : this.runs) {
          Page<RunPage> currentPage = this.bufferManager.pinPage(run.getFirstPageID());
          PageID nextPageID = RunPage.getNextPage(currentPage);
          this.bufferManager.freePage(currentPage);
@@ -140,8 +138,8 @@ public class TreeOfLosers implements TupleIterator {
     * 
     * @return all runs
     */
-   public ArrayList<Run> getRuns0() {
-      return this.runs0;
+   public ArrayList<Run> getRuns() {
+      return this.runs;
    }
 
    /**
