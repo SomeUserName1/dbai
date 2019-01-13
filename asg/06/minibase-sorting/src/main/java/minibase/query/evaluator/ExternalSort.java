@@ -36,9 +36,14 @@ public class ExternalSort extends AbstractOperator implements TupleIterator {
     private final BufferManager bufferManager;
 
     /**
+     * input to sort.
+     */
+    private final Operator input;
+
+    /**
      * A TupleIterator over the input gotten from an operator.
      */
-    private final TupleIterator inputIterator;
+    private TupleIterator inputIterator;
 
     /**
      * The schema of the input.
@@ -99,7 +104,8 @@ public class ExternalSort extends AbstractOperator implements TupleIterator {
         super(schema);
 
         this.bufferManager = bufferManager;
-        this.inputIterator = input.open();
+        this.input = input;
+        this.inputIterator = null;
         this.schema = schema;
         this.comparator = comparator;
         this.bufferSize = bufferSize;
@@ -108,8 +114,15 @@ public class ExternalSort extends AbstractOperator implements TupleIterator {
         this.pages = new ArrayList<>(this.bufferSize);
         this.greatestRecord = null;
         this.danglingRecord = null;
+    }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public TupleIterator open() {
 
+        this.inputIterator = this.input.open();
         final int maxRecords = this.getMaxRecords();
 
         for (this.recordsInBuffer = 0; this.recordsInBuffer < maxRecords && this.inputIterator.hasNext();
@@ -122,13 +135,8 @@ public class ExternalSort extends AbstractOperator implements TupleIterator {
             RunPage.insertEntry(this.pages.get(this.pages.size() - 1), this.inputIterator.next(), this.recordsInBuffer,
                     this.schema.getLength(), this.recordsPerPage);
         }
-    }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public TupleIterator open() {
+
         final ArrayList<Run> runs = new ArrayList<>();
         RunBuilder runBuilder = new RunBuilder(this.bufferManager, this.schema.getLength());
 
@@ -145,18 +153,7 @@ public class ExternalSort extends AbstractOperator implements TupleIterator {
             }
         }
         runs.add(runBuilder.finish());
-
         this.close();
-
-        try {
-            this.inputIterator.close();
-        } catch (final UnsupportedOperationException ignored) {
-        }
-        // TODO merge and return final Run
-        //RunBuilder result = new RunBuilder(this.bufferManager, this.schema.getLength());
-        //TreeOfLosers tol = new TreeOfLosers(runs, this.comparator, this.schema.getLength(), this.bufferManager);
-
-
         return new TreeOfLosers(runs, this.comparator, this.schema.getLength(), this.bufferManager);
     }
 
@@ -195,8 +192,8 @@ public class ExternalSort extends AbstractOperator implements TupleIterator {
         // Check if the next input record is better fitting
         if (record != null && (least == null || this.comparator.lessThan(record, least))
                 && (this.greatestRecord == null || this.comparator.greaterThanOrEqual(record, this.greatestRecord))) {
-                this.greatestRecord = record;
-                return record;
+            this.greatestRecord = record;
+            return record;
         } else if (least == null) {
             // No satisfying element could be found
             this.danglingRecord = record;
@@ -257,12 +254,14 @@ public class ExternalSort extends AbstractOperator implements TupleIterator {
         for (Page<RunPage> runPage : this.pages) {
             this.bufferManager.freePage(runPage);
         }
+        try {
+            this.inputIterator.close();
+        } catch (final UnsupportedOperationException ignored) {
+        }
     }
 
     /**
-     *
-     * @return
-     *  the maxmimal number of records in the buffer
+     * @return the maxmimal number of records in the buffer
      */
     private int getMaxRecords() {
         return this.bufferSize * this.recordsPerPage;

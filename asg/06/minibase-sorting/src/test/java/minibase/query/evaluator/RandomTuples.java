@@ -21,86 +21,96 @@ import minibase.query.schema.Schema;
  */
 public class RandomTuples implements Operator, TupleIterator {
 
-   /** Schema to determine length of each tuple. */
-   private final Schema schema;
+    /**
+     * Schema to determine length of each tuple.
+     */
+    private final Schema schema;
 
-   /** Random object to generate tuples with. */
-   private final long randomSeed;
+    /**
+     * Random object to generate tuples with.
+     */
+    private final long randomSeed;
 
-   /** Probablity to return a duplicate. */
-   private final double duplicateProbability;
+    /**
+     * Probablity to return a duplicate.
+     */
+    private final double duplicateProbability;
 
-   /** How many tuples to generate. */
-   private final int maxTuples;
+    /**
+     * How many tuples to generate.
+     */
+    private final int maxTuples;
 
-   /** Random object to generate tuples with. */
-   private Random random;
+    /**
+     * Random object to generate tuples with.
+     */
+    private Random random;
 
-   /** last returned tuple. */
-   private ArrayList<byte[]> alreadyReturned;
+    /**
+     * last returned tuple.
+     */
+    private ArrayList<byte[]> alreadyReturned;
 
-   /** How many tuples have been returned. (Inclusive duplicates). */
-   private int returnedTuples;
+    /**
+     * How many tuples have been returned. (Inclusive duplicates).
+     */
+    private int returnedTuples;
 
-   /**
-    * Constructor.
-    * 
-    * @param schema
-    *           schema to get the length of each tuple from
-    * @param randomSeed
-    *           random with user defined seed.
-    * @param duplicateProbability
-    *           to return a tuple which was already returned
-    * @param maxTuples
-    *           How many tuples to generate
-    */
-   RandomTuples(final Schema schema, final long randomSeed, final double duplicateProbability,
-                final int maxTuples) {
-      this.schema = schema;
-      this.randomSeed = randomSeed;
-      this.duplicateProbability = duplicateProbability;
-      this.alreadyReturned = new ArrayList<>();
-      this.maxTuples = maxTuples;
-      
-      this.reset();
-   }
+    /**
+     * Constructor.
+     *
+     * @param schema               schema to get the length of each tuple from
+     * @param randomSeed           random with user defined seed.
+     * @param duplicateProbability to return a tuple which was already returned
+     * @param maxTuples            How many tuples to generate
+     */
+    RandomTuples(final Schema schema, final long randomSeed, final double duplicateProbability,
+                 final int maxTuples) {
+        this.schema = schema;
+        this.randomSeed = randomSeed;
+        this.duplicateProbability = duplicateProbability;
+        this.alreadyReturned = new ArrayList<>();
+        this.maxTuples = maxTuples;
 
-   @Override
-   public TupleIterator open() {
-      return this;
-   }
+        this.reset();
+    }
 
-   @Override
-   public Schema getSchema() {
-      return this.schema;
-   }
+    @Override
+    public TupleIterator open() {
+        return new RandomTuples(this.schema, this.randomSeed, this.duplicateProbability, this.maxTuples);
+    }
 
-@Override
-   public boolean hasNext() {
-      return this.returnedTuples < this.maxTuples;
-   }
+    @Override
+    public Schema getSchema() {
+        return this.schema;
+    }
 
-   @Override
-   public byte[] next() {
-      final byte[] newTuple = new byte[this.schema.getLength()];
-      this.returnedTuples++;
-      if (this.random.nextDouble() >= this.duplicateProbability) {
-         this.random.nextBytes(newTuple);
-         this.alreadyReturned.add(newTuple);
-         return newTuple;
-      } else {
-         return this.alreadyReturned.get(this.random.nextInt(this.alreadyReturned.size()));
-      }
-   }
+    @Override
+    public boolean hasNext() {
+        return this.returnedTuples < this.maxTuples;
+    }
 
-   @Override
-   public void reset() {
-      this.returnedTuples = 0;
-      this.random = new Random(this.randomSeed);
-   }
+    @Override
+    public byte[] next() {
+        final byte[] newTuple = new byte[this.schema.getLength()];
+        this.returnedTuples++;
+        if (this.random.nextDouble() >= this.duplicateProbability) {
+            this.random.nextBytes(newTuple);
+            this.alreadyReturned.add(newTuple);
+            return newTuple;
+        } else {
+            return this.alreadyReturned.get(this.random.nextInt(this.alreadyReturned.size()));
+        }
+    }
 
-   @Override
-   public void close() {
-      throw new UnsupportedOperationException("Random generator can not be closed");
-   }
+    @Override
+    public void reset() {
+        this.returnedTuples = 0;
+        this.random = new Random(this.randomSeed);
+    }
+
+    @Override
+    public void close() {
+        throw new UnsupportedOperationException("Random generator can not be closed");
+    }
 }
