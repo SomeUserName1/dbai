@@ -10,6 +10,8 @@
  */
 package minibase.query.evaluator;
 
+import java.sql.Date;
+
 import org.junit.Before;
 
 import minibase.BaseTest;
@@ -18,6 +20,7 @@ import minibase.access.file.HeapFile;
 import minibase.catalog.DataType;
 import minibase.query.schema.Schema;
 import minibase.query.schema.SchemaBuilder;
+import minibase.util.Convert;
 
 /**
  * This base class contains code that is common to the test cases of the evaluator layer.
@@ -32,6 +35,14 @@ public class EvaluatorBaseTest extends BaseTest {
          "Alexander", "Florian", "Johann", "Christoph", "Menna", "Michael", "Javid", "Lokesh", "Madhurima",
          "Shahana", "Emanuel", "Minh Huyen", "Mario", "Feeras", "Manuel", "Klaus", "Niklas", "Philip", "Sema",
          "Nayeem", "Tribhuwan", "Jens", "Leonard" };
+
+
+   /** Array with sample boat names. */
+   protected static final String[] BNAMES = { "Laser", "Ambrosius", "Gorch-Fock", "Danke_Merkel", "LoTR",
+         "I_like_turtles", "take", "all", "columns", "from", "our", "C_n" };
+
+   /** Array with sample colors. */
+   protected static final String[] BCOLORS = { "red", "green", "blue", "white", "black" };
 
    /** Schema of the Sailors relation. */
    protected static final Schema S_SAILORS = new SchemaBuilder()
@@ -77,6 +88,55 @@ public class EvaluatorBaseTest extends BaseTest {
       return sailors;
    }
 
+
+   /**
+    * Returns the heap file containing the data of the Sailors relation.
+    * @param num number of tuples to generate
+    * @param numSailors number of distinct sailors
+    * @param numBoats number of distinct boats
+    *
+    * @return heap file of the Sailors relation
+    */
+   protected File createReserves(final int num, final int numSailors, final int numBoats) {
+      final File sailors = HeapFile.createTemporary(this.getBufferManager());
+      for (int i = 0; i < num; i++) {
+         final byte[] tuple = EvaluatorBaseTest.S_RESERVES.newTuple();
+         S_RESERVES.setAllFields(tuple,
+               // sid, bid, date, name
+               this.getRandom().nextInt(numSailors),
+               this.getRandom().nextInt(numBoats),
+               new Date(-946771200000L + (Math.abs(this.getRandom().nextLong())
+                     % (70L * 365 * 24 * 60 * 60 * 1000))),
+               "Reservation " + i
+         );
+         sailors.insertRecord(tuple);
+      }
+      return sailors;
+   }
+
+   /**
+    * Returns the heap file containing the data of the Sailors relation.
+    * @param num number of tuples to generate
+    *
+    * @return heap file of the Sailors relation
+    */
+   protected File createBoats(final int num) {
+      final File sailors = HeapFile.createTemporary(this.getBufferManager());
+      for (int i = 0; i < num; i++) {
+         final byte[] tuple = EvaluatorBaseTest.S_BOATS.newTuple();
+         S_BOATS.setAllFields(tuple,
+               i,
+               EvaluatorBaseTest.BNAMES[this.getRandom().nextInt(EvaluatorBaseTest.BNAMES.length)],
+               EvaluatorBaseTest.BCOLORS[this.getRandom().nextInt(EvaluatorBaseTest.BCOLORS.length)]
+
+         );
+         sailors.insertRecord(tuple);
+      }
+      return sailors;
+   }
+
+
+
    /**
     * Test setup that creates a new database on disk and a heap file for the Sailors relations. It also
     * initializes the Sailors relation with random data.
@@ -94,10 +154,52 @@ public class EvaluatorBaseTest extends BaseTest {
    protected int evaluate(final Operator operator) {
       int count = 0;
       try (TupleIterator it = operator.open()) {
-         while (it.hasNext()) {
-            count++;
-         }
+         ++count;
       }
       return count;
+   }
+
+   /**
+    * Some stupid print function.
+    *
+    * @param ti tuple iterator to print
+    */
+   protected void printSailor(final TupleIterator ti) {
+      while (ti.hasNext()) {
+         final byte[] nextTuple = ti.next();
+         System.out.print(Convert.readInt(nextTuple, 0) + "\t");
+         System.out.print(Convert.readString(nextTuple, 4, 50) + "  \t");
+         System.out.print(Convert.readInt(nextTuple, 54) + "\t");
+         System.out.println(Convert.readFloat(nextTuple, 58));
+      }
+   }
+
+   /**
+    * Some stupid print function.
+    *
+    * @param ti tuple iterator to print
+    */
+   protected void printReservations(final TupleIterator ti) {
+      while (ti.hasNext()) {
+         final byte[] nextTuple = ti.next();
+         System.out.print(Convert.readInt(nextTuple, 0) + "\t");
+         System.out.print(Convert.readInt(nextTuple, 4) + "\t");
+         System.out.print(Convert.readDate(nextTuple, 8) + "\t");
+         System.out.println(Convert.readString(nextTuple, 11, 50) + "  \t");
+      }
+   }
+
+   /**
+    * Some stupid print function.
+    *
+    * @param ti tuple iterator to print
+    */
+   protected void printBoats(final TupleIterator ti) {
+      while (ti.hasNext()) {
+         final byte[] nextTuple = ti.next();
+         System.out.print(Convert.readInt(nextTuple, 0) + "\t");
+         System.out.print(Convert.readString(nextTuple, 4, 20) + "  \t");
+         System.out.println(Convert.readString(nextTuple, 24, 10) + "\t");
+      }
    }
 }
