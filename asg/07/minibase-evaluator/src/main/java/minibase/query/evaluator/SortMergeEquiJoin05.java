@@ -47,7 +47,14 @@ public class SortMergeEquiJoin05 extends AbstractOperator {
     */
    private final RecordComparator predicate;
 
+   /**
+    * inner column.
+    */
    private int innerColumn;
+
+   /**
+    * outer column.
+    */
    private int outerColumn;
 
    /**
@@ -74,15 +81,17 @@ public class SortMergeEquiJoin05 extends AbstractOperator {
    @Override
    public TupleIterator open() {
 
-      final TupleIterator outerSorted = new ExternalSort(bufferManager, this.outer,
-              new TupleComparator(this.outer.getSchema(), new int[] {outerColumn}, new boolean[] { true }), 5, 2).open();
+      final TupleIterator outerSorted = new ExternalSort(this.bufferManager, this.outer,
+              new TupleComparator(this.outer.getSchema(), new int[] {this.outerColumn},
+                    new boolean[] { true }), 5, 2).open();
       if (!outerSorted.hasNext()) {
          outerSorted.close();
          return TupleIterator.EMPTY;
       }
 
       final TupleIterator innerSorted = new ExternalSort(this.bufferManager, this.inner,
-              new TupleComparator(this.inner.getSchema(), new int[] {innerColumn}, new boolean[] { true }), 5, 2).open();
+              new TupleComparator(this.inner.getSchema(), new int[] {this.innerColumn},
+                    new boolean[] { true }), 5, 2).open();
       if (!innerSorted.hasNext()) {
          outerSorted.close();
          innerSorted.close();
@@ -90,14 +99,12 @@ public class SortMergeEquiJoin05 extends AbstractOperator {
       }
 
       return new TupleIterator() {
-
          /**
-          * current outer tuple
+          * current outer tuple.
           */
          private byte[] outerTuple = outerSorted.next();
-
          /**
-          * current outer tuple
+          * current outer tuple.
           */
          private byte[] innerTuple = innerSorted.next();
 
@@ -129,12 +136,10 @@ public class SortMergeEquiJoin05 extends AbstractOperator {
             }
 
             final byte[] prevInner = innerTuple.clone();
-            LinkedList<byte[]> innerList = new LinkedList<byte[]>();
+            final LinkedList<byte[]> innerList = new LinkedList<byte[]>();
 
             while (SortMergeEquiJoin05.this.predicate.equals(this.outerTuple, prevInner)) {
-
                innerTuple = prevInner;
-
                while (SortMergeEquiJoin05.this.predicate.equals(this.outerTuple, this.innerTuple)) {
                   // System.out.println("adding joined tuple");
                   this.nextBlock.add(Schema.join(this.outerTuple, this.innerTuple));
@@ -152,7 +157,8 @@ public class SortMergeEquiJoin05 extends AbstractOperator {
                   return !this.nextBlock.isEmpty();
                } else {
                   this.outerTuple = outerSorted.next();
-                  while (outerSorted.hasNext() && SortMergeEquiJoin05.this.predicate.equals(this.outerTuple, prevInner)) {
+                  while (outerSorted.hasNext() && SortMergeEquiJoin05.this.predicate.equals(
+                        this.outerTuple, prevInner)) {
                      for (byte[] t : innerList) {
                         this.nextBlock.add(Schema.join(this.outerTuple, t));
                         this.outerTuple = outerSorted.next();
@@ -166,12 +172,10 @@ public class SortMergeEquiJoin05 extends AbstractOperator {
          }
 
          @Override public byte[] next() {
-            // validate the next tuple
             if (!this.hasNext()) {
                this.close();
                throw new NoSuchElementException("No more tuples to return.");
             }
-            // return (and forget) the tuple
             return this.nextBlock.poll();
          }
 

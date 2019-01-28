@@ -13,9 +13,9 @@ package minibase.query.evaluator;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
-import minibase.access.file.File;
-import org.junit.Assert;
 import org.junit.Test;
+
+import minibase.access.file.File;
 
 import minibase.access.file.FileScan;
 import minibase.access.file.HeapFile;
@@ -50,14 +50,17 @@ public class JoinTest05 extends EvaluatorBaseTest05 {
                new TableScan(S_RESERVES, r), 0, new TableScan(S_SAILORS, s), 0);
          try (TupleIterator ti = smj.open()) {
             final int count = this.printReservationSMJSailors(ti);
-            Assert.assertEquals(count, 400);
+            assertEquals(count, 400);
             System.out.println("# matches: " + count);
-         } catch (Exception e) {
+         } catch (final Exception e) {
             e.printStackTrace();
          }
       }
    }
 
+   /**
+    * some test.
+    */
    @Test
    public void testInnerOuter() {
        try (HeapFile s = (HeapFile) createSailors(1000);
@@ -69,15 +72,18 @@ public class JoinTest05 extends EvaluatorBaseTest05 {
                    new TableScan(S_RESERVES, r), 0, new TableScan(S_SAILORS, s), 0);
 
            try (TupleIterator ti1 = smj1.open(); TupleIterator ti2 = smj2.open()) {
-               assertEquals(countTuples(ti1), countTuples(ti2));
-           } catch (Exception e) {
+               assertEquals(this.countTuples(ti1), this.countTuples(ti2));
+           } catch (final Exception e) {
                e.printStackTrace();
            }
        }
    }
 
+   /**
+    * some test.
+    */
    @Test
-   public void SidBid() {
+   public void sidBid() {
        // test join relation with empty relation
        try (HeapFile s = (HeapFile) createSailors(1000);
             HeapFile r = (HeapFile) createReserves(400, 1000, 1000)) {
@@ -96,9 +102,9 @@ public class JoinTest05 extends EvaluatorBaseTest05 {
                    new TableScan(S_RESERVES, r), 1, new TableScan(S_SAILORS, s), 0);
            try (TupleIterator ti = smj.open()) {
                final int count = this.printReservationSMJSailors(ti);
-               Assert.assertEquals(count, 400);
+               assertEquals(count, 400);
                System.out.println("# matches: " + count);
-           } catch (Exception e) {
+           } catch (final Exception e) {
                e.printStackTrace();
            }
        }
@@ -149,6 +155,11 @@ public class JoinTest05 extends EvaluatorBaseTest05 {
       return count;
    }
 
+   /**
+    * print function.
+    * @param ti tuple iterator to print
+    * @return the number of tuples
+    */
     private int printReservationSMJSailors(final TupleIterator ti) {
         int count = 0;
         while (ti.hasNext()) {
@@ -169,7 +180,7 @@ public class JoinTest05 extends EvaluatorBaseTest05 {
     }
 
     /**
-     * Count the number of return tupels
+     * Count the number of return tupels.
      *
      * @param ti tuple iterator to count
      * @return number of tupels
