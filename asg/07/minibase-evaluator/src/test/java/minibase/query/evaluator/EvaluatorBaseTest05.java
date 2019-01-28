@@ -1,5 +1,5 @@
 /*
- * @(#)EvaluatorBaseTest.java   1.0   Jan 13, 2014
+ * @(#)EvaluatorBaseTest05.java   1.0   Jan 13, 2014
  *
  * Copyright (c) 1996-1997 University of Wisconsin.
  * Copyright (c) 2006 Purdue University.
@@ -9,8 +9,6 @@
  * Use is subject to license terms. Please refer to the included copyright notice.
  */
 package minibase.query.evaluator;
-
-import java.sql.Date;
 
 import org.junit.Before;
 
@@ -28,7 +26,7 @@ import minibase.util.Convert;
  * @author Michael Grossniklaus &lt;michael.grossniklaus@uni-konstanz.de&gt;
  * @version 1.0
  */
-public class EvaluatorBaseTest extends BaseTest {
+public class EvaluatorBaseTest05 extends BaseTest {
 
    /** Array with sample sailor names. */
    protected static final String[] SNAMES = { "Daniel", "Andreas", "Dominik", "Jürgen", "Nadja", "Marcel",
@@ -61,11 +59,11 @@ public class EvaluatorBaseTest extends BaseTest {
 
    /** Schema of the Reserves relation. */
    protected static final Schema S_RESERVES = new SchemaBuilder()
-         .addField("sid", DataType.INT, DataType.INT.getSize())
-         .addField("bid", DataType.INT, DataType.INT.getSize())
-         .addField("day", DataType.DATE, DataType.DATE.getSize())
-         .addField("rname", DataType.CHAR, 50)
-         .build();
+           .addField("sid", DataType.INT, DataType.INT.getSize())
+           .addField("bid", DataType.INT, DataType.INT.getSize())
+           .addField("day", DataType.DATE, DataType.DATE.getSize())
+           .addField("rname", DataType.CHAR, 50)
+           .build();
 
    /**
     * Returns the heap file containing the data of the Sailors relation.
@@ -76,10 +74,10 @@ public class EvaluatorBaseTest extends BaseTest {
    protected File createSailors(final int num) {
       final File sailors = HeapFile.createTemporary(this.getBufferManager());
       for (int i = 0; i < num; i++) {
-         final byte[] tuple = EvaluatorBaseTest.S_SAILORS.newTuple();
+         final byte[] tuple = EvaluatorBaseTest05.S_SAILORS.newTuple();
          S_SAILORS.setAllFields(tuple,
                i,
-               EvaluatorBaseTest.SNAMES[this.getRandom().nextInt(EvaluatorBaseTest.SNAMES.length)],
+               EvaluatorBaseTest05.SNAMES[this.getRandom().nextInt(EvaluatorBaseTest05.SNAMES.length)],
                this.getRandom().nextInt(11),
                this.getRandom().nextFloat() * 81.9f + 18.0f
          );
@@ -100,14 +98,17 @@ public class EvaluatorBaseTest extends BaseTest {
    protected File createReserves(final int num, final int numSailors, final int numBoats) {
       final File sailors = HeapFile.createTemporary(this.getBufferManager());
       for (int i = 0; i < num; i++) {
-         final byte[] tuple = EvaluatorBaseTest.S_RESERVES.newTuple();
+         final byte[] tuple = EvaluatorBaseTest05.S_RESERVES.newTuple();
          S_RESERVES.setAllFields(tuple,
-               // sid, bid, date, name
-               this.getRandom().nextInt(numSailors),
-               this.getRandom().nextInt(numBoats),
-               new Date(-946771200000L + (Math.abs(this.getRandom().nextLong())
-                     % (70L * 365 * 24 * 60 * 60 * 1000))),
-               "Reservation " + i
+                 // sid, bid, date, name
+                 this.getRandom().nextInt(numSailors),
+                 this.getRandom().nextInt(numBoats),
+                 new java.sql.Date(
+                         this.getRandom().nextInt(120),
+                         this.getRandom().nextInt(12),
+                         this.getRandom().nextInt(32)
+                 ),
+                 "Reservation " + i
          );
          sailors.insertRecord(tuple);
       }
@@ -123,11 +124,11 @@ public class EvaluatorBaseTest extends BaseTest {
    protected File createBoats(final int num) {
       final File sailors = HeapFile.createTemporary(this.getBufferManager());
       for (int i = 0; i < num; i++) {
-         final byte[] tuple = EvaluatorBaseTest.S_BOATS.newTuple();
+         final byte[] tuple = EvaluatorBaseTest05.S_BOATS.newTuple();
          S_BOATS.setAllFields(tuple,
                i,
-               EvaluatorBaseTest.BNAMES[this.getRandom().nextInt(EvaluatorBaseTest.BNAMES.length)],
-               EvaluatorBaseTest.BCOLORS[this.getRandom().nextInt(EvaluatorBaseTest.BCOLORS.length)]
+               EvaluatorBaseTest05.BNAMES[this.getRandom().nextInt(EvaluatorBaseTest05.BNAMES.length)],
+               EvaluatorBaseTest05.BCOLORS[this.getRandom().nextInt(EvaluatorBaseTest05.BCOLORS.length)]
 
          );
          sailors.insertRecord(tuple);
