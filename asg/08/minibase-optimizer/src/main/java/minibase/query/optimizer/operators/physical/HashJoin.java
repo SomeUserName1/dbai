@@ -22,7 +22,10 @@ import minibase.query.optimizer.operators.OperatorType;
 import minibase.query.optimizer.util.StrongReference;
 import minibase.query.schema.ColumnReference;
 import minibase.query.schema.Schema;
+import minibase.storage.buffer.BufferManager;
 import minibase.storage.file.DiskManager;
+
+import static minibase.storage.file.DiskManager.PAGE_SIZE;
 
 /**
  * Physical operator that implements the {@link minibase.query.optimizer.operators.logical.EquiJoin EquiJoin}
@@ -75,6 +78,26 @@ public class HashJoin extends AbstractPhysicalJoin {
    @Override
    public Cost getLocalCost(final LogicalProperties localProperties,
          final LogicalProperties... inputProperties) {
+      final double leftCardinality = ((LogicalCollectionProperties) inputProperties[0]).getCardinality();
+      final double rightCardinality = ((LogicalCollectionProperties) inputProperties[1]).getCardinality();
+      final double outputCardinality = ((LogicalCollectionProperties) localProperties).getCardinality();
+
+      final int leftWidth = ((LogicalCollectionProperties) inputProperties[0]).getSchema().getLength();
+      final int rightWidth = ((LogicalCollectionProperties) inputProperties[1]).getSchema().getLength();
+
+      final int leftRecordsPerPage = PAGE_SIZE / leftWidth;
+      final int rightRecordsPerPage = PAGE_SIZE / rightWidth;
+
+      final double leftPages = (int)Math.ceil((leftCardinality * leftWidth) / PAGE_SIZE);
+      final double rightPages = (int)Math.ceil((rightCardinality * rightWidth) / PAGE_SIZE);
+
+      final double ioCosts = 3 * (leftPages + rightPages) * CostModel.IO_SEQ.getCost();
+
+      final double cpuCosts = CostModel.HASH_COST.getCost() * (leftCardinality + rightCardinality)
+              + CostModel.HASH_PROBE.getCost() * Math.max(leftPages, rightPages)
+              * Math.max(leftRecordsPerPage, rightRecordsPerPage) + outputCardinality * CostModel.TOUCH_COPY.getCost();
+
+      return new Cost(ioCosts, cpuCosts);
    }
 
    @Override

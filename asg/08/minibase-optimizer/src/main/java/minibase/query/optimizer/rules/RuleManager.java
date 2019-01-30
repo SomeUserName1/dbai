@@ -105,8 +105,7 @@ public final class RuleManager {
     *           {@code true} if the rule should be used by the optimizer, {@code false} otherwise
     */
    public void setRuleStatus(final Rule rule, final boolean active) {
-      // TODO Implement this method.
-      throw new OptimizerError("Method not implemented: RuleManager#setRuleStatus(Rule, boolean).");
+      this.active[rule.getIndex()] = active;
    }
 
    /**
