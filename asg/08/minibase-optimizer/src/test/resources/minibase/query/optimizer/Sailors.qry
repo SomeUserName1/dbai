@@ -1,0 +1,24 @@
+// Test query on Sailors database.
+(DISTINCT,
+   (PROJECT(<S.sname, B.bname>),
+      (SELECT,
+         (EQJOIN(R.sid, S.sid),
+            (EQJOIN(B.bid, R.bid),
+               GET(Boats, B),
+               GET(Reserves, R)
+            ),
+            GET(Sailors, S)
+         ),
+         (OP_OR,
+            (OP_GT,
+               ATTR(S.rating),
+               INT(3)
+            ),
+            (OP_LT,
+               ATTR(S.rating),
+               INT(5)
+            )
+         )
+      )
+   )
+)
