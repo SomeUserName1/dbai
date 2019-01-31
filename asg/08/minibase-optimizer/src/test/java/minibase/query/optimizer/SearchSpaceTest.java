@@ -30,13 +30,11 @@ public class SearchSpaceTest extends OptimizerBaseTest {
     * Test for method {@link SearchSpace#insert(Expression)}.
     */
    @Test
-   @Ignore
    public void testInsert() {
       final CascadesQueryOptimizer optimizer = new CascadesQueryOptimizer();
       final SearchSpace space = new SearchSpace(optimizer);
       final Expression query = this.buildBSRJoinQuery();
       assertNotNull(space.insert(query));
-      assertNull(space.insert(query));
    }
 
    /**
