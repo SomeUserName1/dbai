@@ -1,0 +1,145 @@
+\chapter{Hash- and Tree-based Indexes }
+
+\section{General Indexes}
+Use an auxillary structure to provide support for certain functions.
+Variants: 1 resembles the sorted file on attribute A, thus only one such index should exist to avoid redundant storage of records. 2 and 3 use rids where 3 groups records that match a search key k.
+\begin{enumerate}
+    \item $<$k, $< \dots,A=k,\dots>>$
+    \item $<$k, rid$>$
+    \item $<$k, [rid$_1$, ...]$>$
+\end{enumerate}
+ \paragraph{Clustered \& Unclustered Index:} An Index is clustered if the underlying file is sorted according to the indexed key. It's unclustered if the file is not sorted at all or on another key. So there may be at most one clustered index besides redundant indexes. \\
+ \paragraph{A sparse index} is an index where only the smallest/largest key \underline{per page} is stored instead of per record. Sparse Indexes can only be created if they are clustered indexes. If all records are present in the index it's called dense.
+ \paragraph{Multi-Attribute Indexes} apply the previous techniques to a combination of attribute values. This enables the lookup of all combined attributes in common or a prefix of the multi-attribute key in case of a B+Tree index.
+ 
+ 
+ \section{Tree-based Indexes}
+ Containing only one record per page those auxiliary structures recurse until all data fit onto one page in terms of representation.  Thus they are very useful for range selections. \\
+ 
+ \paragraph{Fan-out:} The average number of childrean for a non-leaf node.
+ 
+ \subsection{Indexed Sequential Access Method}
+
+  \begin{enumerate}
+     \item Sort the file on attribute A and store it
+     \item for each page maintain a pair $<k_i,p_i>$ conatining the most extreme key wrt. a comparator of a certain Page i and a pointer to that page
+     \item use them as array to access the right page without scanning the page
+ \end{enumerate}
+ \begin{itemize}
+    \item One-level ISAM $\Rightarrow$Recurse on output to obtain Multi-level ISAM
+     \item ISAM is always static. Insert if space left or use overflow chains $\Rightarrow$ search performance will dicrease over time
+     \item since ISAM is static \textbf{it doesn't need to be locked}
+     \item costs for searching: $\log_F N$
+ \end{itemize}
+
+ \subsection{B+Tree}
+\begin{itemize}
+    \item Similar to ISAM but dynamic wrt. updates $\Rightarrow$ no overflow chains/remains balanced
+    \item Search performance is also $\log_F N$
+    \item supports updates efficiently, guaranteed occupancy of 50%
+    \item non-leafes have same layout as in ISAM
+    \item leaf nodes contain pointers to records (instead of ISAM: Pages)
+    \item B+Tree index moves data records on split and merge, thus rid changes
+    \begin{enumerate}
+        \item $k_i^* = <k_i,<\text{attr}_1, \dots>>$
+        \item $k_i^* = <k_i, \text{rid}>$
+        \item $k_i^* = <k_i, [\text{rid}_1, \dots]>$
+    \end{enumerate}
+    \item occupancy rule might be relaxed
+    \item duplicates are not supported, supported as normal values (affects search, checking the siblings) or using variant 3 grouped
+\end{itemize}
+ 
+ \paragraph{Searching:} As in ISAM, check the key and perform bin search until leaf is reached. \\
+ 
+ \paragraph{Insert:} look for the right place, if not full insert. If full check siblings for redistribution (and update separator if necessary). If not possible split. \\
+ 
+ \paragraph{Split:} Create new node, redistribute keys, take first value of the second leaf as new separator and propagate the spilt upwards. \\
+ 
+\paragraph{Delete:} Search leaf, delete value from it. If minimal occupancy below limit, check siblings for redistribution. If not possible, merge. \\
+
+\paragraph{Merge:} Merge with sibling node, delete key from parent level pointing to second leaf and propagate upwards
+ 
+\paragraph{Key Compression} uses prefixes or smaller data types to just approximate the actual values in the leafs. Another variant is to store common prefixes only once per node e.g. iri,o,r \\
+
+\paragraph{Bulk loading} If index is created, the tree is traversed $|\text{records}|$ times. Most DBMS provide therefore a bulk tree loading utility.
+\begin{enumerate}
+    \item for each key $k$ in the data file, create a sorted list of pages of index leaf entries (does not imply sorting the data file itself on key $k$ for variants 2,3; var 1 creates a clustered index)
+    \item allocate an empty root and let the first pointer $p_0$ point to the first entry of the sorted list
+    \item for each leaf level node/list entry insert the index entry $<p_n, \min(val(n))>$ into the rightmost index node above the leaf level
+\end{enumerate}
+
+\paragraph{Invariants}
+\begin{itemize}
+    \item Order: d
+    \item Occupancy: $d-1 < |\text{values}| < 2d+1$. Exception: root
+    \item Fan-out: Non-leaf holding m keys has m+1 children
+    \item Sorted Order nodes contain elements in comparator order, all children to the left are smaler wrt. comparator than the value in the parent and the subtrees to the right.
+    \item Balanced: All leaf nodes are on the same level
+    \item Height: $\log_d N$
+\end{itemize}
+
+
+ \section{Hash-based Indexes}
+ "Unbeatable for Equality operations", no support for range queries
+ \img{hash_fn.png}
+ \img{hash_family.png}
+ 
+ \subsection{Static Hashing}
+\begin{enumerate}
+    \item Allocate a fixed area of N successive disk pages \textbf{primary buckets} 
+    \item for each bucket install a pointer to a chain of overflow pages (init to null)
+    \item Define a hash function h with range $[0,N-1]$. 
+\end{enumerate}
+\begin{itemize}
+    \item search: 1 I/O
+    \item insert \& delete: 2 I/O
+    \item Hash function should distribute evenly, overflow chains need distinct hash functions to avoid recursive collisions
+    \item locking only required based on buckets/overflow chains
+\end{itemize}
+local depth $d$, global depth $n$
+\img{static_hashing.png}
+
+ \subsection{Extendible Hashing}
+ Uses in-memory bucket directory to keep track of the actual primary buckets by adapting the hash function and the access to the buckets
+ 
+ \img{extendible_hashing.png}
+ 
+ \paragraph{Searching:} buckets is an array of size $2^{n-1}$ where each entry points to a corresponding bucket
+ \begin{enumerate}
+     \item n = global depth
+     \item b = $h(k) \& (2n-1)$ // mask last n-1 bits
+     \item bucket = buckets[b]
+ \end{enumerate}
+ 
+ \paragraph{Insert:} If there is free space in the corresponding bucket just insert, else 
+ \begin{enumerate}
+     \item Split the bucket by creating a new bucket and use bit position $d+1$ to redistribute the entries where $d$ is the local depth
+     \item if $d+1 > n$, $n++$ and double the directory size. The hashing uses now d+1 bits
+     \item let the old bucket be pointed to by 0[...] and the new be pointed to by 1[...]
+     \item if no value goes to the new bucket an overflow chain is initialized
+ \end{enumerate}
+ 
+ \paragraph{Delete:} Analog to insertion
+ 
+ \subsection{Linear Hashing}
+    \img{linear_hashing.png}
+ \begin{enumerate}
+     \item Init: level = 0, next = 0
+     \item current hash fn = $h_{\text{level}}$, active hash buckets: $[0,\dots, 2^{\text{level}} \cdot N]$
+     \item whenever a certain criterion is met, split the bucket which the next pointer references (e.g. \% occupancy reached in a bucket, overflow chain grew longer than x, $\dots$
+ \end{enumerate}
+ 
+ \paragraph{Split}: All buckets with position < next have been already rehashed \\
+ \begin{enumerate}
+     \item Allocate new bucket and append it at position $2^{\text{level}} \cdot N + \text{next}$
+     \item Redistribute entries in the bucket that next references by rehashing with $h_{\text{level}+1}$
+     \item next++, if next $> 2^{\text{level}} \cdot N - 1$, next = 0; level++
+ \end{enumerate}
+ 
+ \paragraph{Insert:} like in static hashing plus additional check for split criterion \\
+ 
+ \paragraph{Delete:} like with static hashing plus if bucket[$2^{\text{level}} \cdot N + next$].empty:
+ \begin{enumerate}
+     \item remove page pointed to by bucket[$2^{\text{level}} \cdot N + next$] from hash table 
+     \item next--, if next < 0, level--, next = $2^{\text{level}} \cdot N + next$
+ \end{enumerate}

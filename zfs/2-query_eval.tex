@@ -1,0 +1,81 @@
+\chapter{Query Evaluation}
+
+\section{Overview}
+\subsection{System Catalog}
+ size of buffer pool, page size, information and statistics about tables, views, indexes
+ \img{sys_cat_info.png}
+ \img{sys_cat_stat.png}
+ \img{sys_cat_ex.png}
+
+\subsection{Access Paths}
+Possible access paths are 
+\begin{itemize}
+    \item file scan
+    \item index with one matching selection condition
+    \item index scan  if all attributes required by the query are contained
+\end{itemize}
+If less than 5\% are retrieved, a table scan is cheaper.
+
+\paragraph{Hash vs. B+Tree Index:} Hash Indexes match if selection contains equality on indexed attribute; B+Trees match if selection contains any condition on an attribute in the trees search prefix. If matches with an index were found in a CNF, those conjuncts are called \textbf{primary conjuncts} \\
+
+\paragraph{The Selectivity} of an access path is the number of index or data pages it retrieves. The most selective access path is the one that retrieves least pages. \\
+
+\paragraph{Reduction Factor:} The fraction of tuples that satisfy a certain conjunct. For several conjuncts this factor is approximated, making an independence assumption. For range queries uniformity is assumed: For a tree index the reduction factor is estimated using the system catalouge: $\frac{High(T)- value}{High(T)- Low(T)}$ \\
+
+\subsection{Communication and Scheduling}
+\paragraph{Pipelining} streams insead of writing out the intermediate result. \\
+\paragraph{Materialization} writes the intermediate result to disk
+
+\img{bracket.png}
+\img{iterator_0.png}
+ \img{iterator_1.png}
+ 
+ \section{External Sorting}
+ 
+ \subsection{Two-Way Merge Sort}
+ Sorts files of arbitary size (here $N=2^k$) with three pages of buffer space in multiple passes, producing a certain number of sub-files called \textbf{runs}
+ \begin{itemize}
+     \item \textbf{Pass 0}: Sorts each of the $2^k$ input page individually in main memory, resulting in the same $2^k$ runs
+     \item \textbf{subsequent passes:} Merge pairs of runs into larger runs. Pass n produces $2^k-n$ runs
+     \item pass k produces one overall sorted final run
+ \end{itemize}
+ \img{2_way_merge_sort.png}
+ \img{2_way_merge_sort_ex.png}
+ 
+ \paragraph{Costs:} Each pass needs to read N pages, sort them in-memory and write them out again $\Rightarrow 2N$ I/O ops per pass \\
+ in total there are pass 0 and k subsequent pass $\Rightarrow 1 + log_2 {N}$
+In Total Two-way Merge Sort costs \[ 2 N (1+ log_2 {N}) \text{I/O ops}\]
+ 
+ \subsection{External Merge Sort}
+ like 2-way merge sort, but reduces the number of runs by using more buffer space to avoid creating one page runs in pass 0 and reduces the number of passes by merging more than two runs at a time.
+ \img{external_ms.png}
+ \img{external_ms_mem.png}
+ \img{external_ms_buf.png}
+ \img{external_ms_ex.png}
+ 
+ \paragraph{Costs:} As in two way: read, sort, write $\Rightarrow 2N$ \\
+ In pass 0 only $\lceil \frac{n}{B}\rceil$ are written thus only needs $\lceil \log_{B-1} \lceil \frac{n}{B}\rceil\rceil$ where B-1 pages are merged at the same time
+ In Total Two-way Merge Sort costs \[ 2 N (1+ \lceil \log_{B-1} \lceil \frac{N}{B}\rceil\rceil) \text{I/O ops}\]
+ 
+ \subsection{Optimizations}
+ \paragraph{Block-grouped I/O:} read blocks of b pages at once during merge. This decreases the I/O costs by factor b but decreases the fan-in thus increases the number of passes. In Total:
+ \[ 2 N (1+ \lceil \log_{\lfloor \frac{B}{b}\rfloor-1} \lceil \frac{N}{B}\rceil\rceil) \text{I/O ops}\]
+ 
+ \img{blocked_io.png}
+ 
+ \paragraph{Tree of Losers}
+ \img{tree_of_losers_algo.png}
+ \img{tree_of_losers_ex.png}
+ 
+ \paragraph{Replacement Sort}
+  \img{replacement_sort_algo.png}
+ \img{replacement_sort_graph}
+ 
+ \paragraph{Double Buffering}
+ \img{double_buffering_algo.png}
+ \img{double_buffering_graph.png}
+ 
+ \paragraph{B+ Tree for Sorting}
+ \img{b+tree_sort.png}
+ 
+ 

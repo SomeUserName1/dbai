@@ -1,0 +1,330 @@
+\chapter{Disk, Buffer \& File Management}
+\newpage
+\section{Hardware}
+    \subsection{Memory Hierarchy:}
+        \img{mem_hierarchy.png}
+        Only data stored in non-volatile memory is persistent across shutdowns and the primary level of memory (address space) is not large enough to map the complete data-base, thus the need for magnetic disks, SSDs, tape and the like. The main goal of the primary memory level is to hide I/O latency by using faster memory to cache a subset of all necessary data. With increasing speed and decreasing size, the cost of the memory is aproximately increasing by a factor of 100 per level. \\
+
+    \subsection{Magnetic Disks:}
+        \img{magnetic_disk.png}
+        \begin{enumerate}
+            \item[Blocks:] Data is read and written to disk one block at a time. Size is multiple of the sector size.
+            \item[Sector:] A sector is a single part of a track
+            \item[Track:] A track is a ring on a plater
+            \item[Cylinder:] A cylinder is the set of all tracks with the same diameter
+            \item[Head:] The head is mounted at the arm which is controlled by a stepper motor to move from track to track as the disk rotates
+        \end{enumerate}
+        The access time t is defined as \[ t = t_s + t_r + t_t \]
+        where \begin{itemize}
+            \item[$t_s$] seek time (movement of disk head to desired track)
+            \item[$t_r$] rotational delay (waiting time until the desired sector has rotated under the disks head)
+            \item[$t_t$] transfer time (time taken to read/write the block) 
+        \end{itemize}
+        Sequential reads are much faster as one only needs to seek and to wait for the disk to rotate one time per sequential instead of on every access as in random I/O \\
+        Optimizations made by disk manufacturers:
+        \begin{itemize}
+            \item Track skewing: align sector of each track sucessively to avoid rotational delay in longer sequential scans
+            \item Request scheduling: sort the disk requests so that minimal arm movement is needed
+            \item zoning: outer tracks are longer than inner so can be divided into more tracks
+        \end{itemize}
+        $\Rightarrow$ Implies I/O focusedness as disks are major bottleneck and data needs to be in main memory to compute over it
+        $\Rightarrow$ Implies distance metric for records (i.e. same block, track, same cylinder, same disk, $\dots$ \\
+        
+        $\Rightarrow$ Clustering I/O ops vs. Declustered Storage
+
+    \subsection{RAID}
+    Redundant Array of Independent Disks, provide redundancy to improve mean time to failure, improve performance using striping, hardware and software based implementations. \\
+    Raid Levels: 
+    \begin{enumerate}
+        \item[0] Striping \\
+        Best Write performance, better read performance, no reliability improvements
+        \item[1] Mirroring \\
+        On-line backup, no performance improvements
+        \item[10] Mirroring + Striping \\
+        reasonable performance w extra reliablility; write intensive workloads, small subsystems
+        \item[2] ECC \\
+        inferior to 3
+        \item[3] Bit-Interleaved parity \\
+        Apropriate for large continuous block requests, bad for many small requests
+        \item[4] Block-Interleaved Parity \\
+        Inferior to 5
+        \item[5] Block-Interleaved Distributed Parity
+        Good general purpose solution, best performance with redundancy for small and large r and large w ops
+        \item[6] P+Q Parity \\
+        highest level of reliability, like 5 with 2 parities
+    \end{enumerate}
+    \img{raid_overview.png}
+    \paragraph{Redundancy schemes:}
+    Parity Groups: Disks or disk space may be grouped and parity may only be computed and stored per group
+    \begin{itemize}
+        \item ECC: \\
+        Initialization: uses bit-level striping and Hamming code to compute ECC for data of n disks which is stored on n-1 additional disks \\
+        Recovery: determine lost disk by using the n-1 extra disks and correct its content from one of those
+        \item Parity Scheme \\
+        Initialization: let $i(n)$ be the number of bits set to 1 at position n on disk; n-th parity bit is set to 1 if $i(n)$ is odd else 0 \\
+        Recovery: Let $j(n)$ be the no. of bits set to 1 at pos n on the non-failed disks. if $j(n)$ odd and parity bit 1 or $j(n)$ even and parity bit is 0, n-th value on failed disk is 0, else 1
+    \end{itemize}
+    
+    \subsection{SSDs}
+    Traits:
+    \begin{itemize}
+        \item Very low read latency (< 0.01ms)
+        \item high transfer rate
+        \item bad random write performance (worse than HDD)
+        \item Page level read and write (only blocks, no single bits or bytes) e.g. 128 kB
+        \item block-level delete e.g. 64 Pages = 1 block $\Rightarrow$ major reason for bad random write performance: if internal fragmentation high: delete complete block reorganize pages and write the changes including addition
+    \end{itemize}
+    Outlook: SSDs and Storage Area Network.
+
+\section{Disk Space Manager}
+   \paragraph{A Page} is a disk block that has been brought into memory, thus pages and disk blocks equal in size. Sequences of pages map onto sequences of disk blocks. A Page is the unit of storage for all components in the system \\
+
+\subsection{Tasks}
+\begin{itemize}
+    \item Allocates/deallocates disk space/Pages; read/writes pages to disk
+    \item track page locations (page no $\leftrightarrow$ OS file + offset $\leftrightarrow$ head, sector and track, disk) 
+    \item tracks free and used blocks
+    \item does Segementation (aka Table spaces, Partitions,...)
+\end{itemize}
+
+ \img{disk_space_manager.png}
+ 
+\paragraph{tracking free and used blocks:}
+ \begin{itemize}
+    \item Linked List of free blocks: 
+        \begin{enumerate}
+             \item pointer to first free block
+             \item when block is freed pre/append it to free block list
+            \item when block is needed take it from the list and adjust pointers
+        \end{enumerate}
+        
+        \item Bitmap of free blocks
+        \begin{enumerate}
+             \item reserve ceil($|blocks|/8$) bytes 
+             \item interpret bitwise (0 = free, 1 = used)
+        \end{enumerate}
+ \end{itemize}
+ 
+ \paragraph{Segmentation/Partitioning} enables a DBMS to split data store into smaller units called e.g. partitions, segments, table spaces, storage pools, $\dots$. Those are then layered e.g. n tables per m table spaces per t segments of s storage pools each beeing one logical os volume.
+
+ 
+\section{Buffer Manager}
+    \paragraph{The BufferManager} mediates between external storage (Disk space manager) and main memory using the \textbf{BufferPool}. It is a designated area of main memory which is organized by the buffer manager. Each frame in the buffer pool has the same size as a page. pages are loaded into frames as needed using \textbf{pin(pageNo)} and evicted by a policy after the page got \textbf{unpin(pageNo, dirty)}. A page is only written if it's marked dirty using \textbf{unpin(pageNo, true)}. Thus all DB transactions need to be surrounded by pin and unpin.
+
+    \subsection{Buffer Allocation policy}
+    Problem: How to allocate buffer frames to each transaction?
+    
+    \begin{itemize}
+        \item[Global] One BufferPool for all transactions \\
+        Good overall usage of space, all TX are taken into account \\
+        Transactions may hurt another by using up buffer frames and force others to reload their pages "extrenal page thrashing" 
+        \item[Local] Treat all TX equal \\
+        TX cannot hurt each other \\
+        bad overall usage of space, some TX may occupy vast amounts without using them while others starve "internal page thrashing"
+    \end{itemize}
+    Mainly mixed/hybrid aproaches perform best. \\
+    \textbf{Static allocation:} assign buffer budget once for aech TX \\
+    \textbf{Dynamic allocation:} Adjust buffer budget according to some policy. \\
+    
+    Examples:
+    \begin{itemize}
+        \item Local MRU \\
+        Keep local LRU stack for each transaction \\
+        keep global free list for not pinned pages\\
+        \begin{enumerate}
+            \item allocate a page from free list
+            \item allocate a page from the LRU stack of the requesting TX
+            \item allocate a page from TX with largest LRU stack
+        \end{enumerate}
+        
+        \item Working Set Model \\
+        Avoid trashing by allocating just enough buffers to each TX \\
+        observe page requests for a certain interval and deduce optimal budged from that based on the ratio of available pages 
+    \end{itemize}
+
+    \subsection{Buffer Replacement policy}
+    \img{replacement_names.png}
+    \img{replacement_matrix.png}
+    \img{replacement_graphic.png}
+    \img{lrd.png}
+    \img{hot_set_mit.png}
+    \img{hot_set_ohne.png}
+    \img{priority_hints.png}
+    \img{prefetch.png}
+
+\section{Files and File-Index Structures}
+\paragraph{RID} Each record has a unique identifier that is used like it's address/pointer. Internally the file structure must be able to map a given rid to the page and slot containing the record. \\
+File $\xrightarrow[\text{contains}]{}$ Pages $\xrightarrow[\text{contains}]{}$ Records $\xrightarrow[\text{contains}]{}$ Fields \\
+
+\subsection{Free Slot Management}
+File structure needs to keep track of pages with free space
+
+\img{file_linked_list_0.png}
+\img{file_linked_list_1.png}
+\img{file_directory.png}
+\img{file_directory_1.png}
+
+
+\begin{tabular}{c|p{4cm}|p{4cm}}
+     & Linked List & Directory \\ \hline
+ + & easy to implement & free space management more efficient \\ \hline
+ - & most pages in free space list & memory overhead \\
+\end{tabular}
+
+
+    
+\subsection{Record Insertion strategy}
+Standard Append, Best Fit, First Fit, Next Fit \\
+\paragraph{Free Space Witness}
+\begin{enumerate}
+    \item classify pages into buckets
+    \item for each bucket remember any page that falls into that one as witness
+    \item only perform best/first/next fit if no witness pahe is recorded for the bucket. Else insert according to witness information
+    \item populate witness information e.g. as side effect while searching
+\end{enumerate}
+
+\subsection{Page Formats}
+In the real world rids are PageNo + slotNo \\
+\img{slot_bitmap.png}
+\img{slot_bitmap_var.png}
+
+\subsection{Record Formats}
+\img{fixed_length_field.png}
+\img{var_size_field.png}
+\img{mixed_size_field.png}
+
+\subsection{Alternative Page Layouts}
+Different layouts optimize different workloads:
+\begin{itemize}
+    \item row-major favors singular access of whole tuples (i.e. insert/update/delete, OLTP workloads)
+    \item column-major favors table scans accessing only a subset of attributes (Scans/aggregations/analytics, OLAP workloads)
+    \item optimally we want both $\Rightarrow$ Hybrid layouts
+\end{itemize}
+
+\paragraph{Row-store \& column Sotre} aka \textbf{n-ary Sorage Model (NSM)} and \textbf{Decomposition Storage Model (DSM)}
+\img{row_column.png}
+
+\paragraph{Surrogate Keys}
+How to address in a column store
+\img{surrogate.png}
+
+\paragraph{Binary Association Tables} are tables broken into individual columns (DSM), using implicit surrogate keys to join.
+\begin{itemize}
+    \item early reconstruction: Access operator needs to know about columnar layout (and assemble the tuple as needed)
+    \item late reconstruction: All operators need to support columnar layout
+\end{itemize}
+
+\paragraph{Table Files} separates directory pages and data. Directory pages form a linked list while pages are listed below
+\img{table_file.png}
+
+\paragraph{Partition Attributes Across}
+\img{pax.png}
+
+\paragraph{Optimized Row Columnar}
+Stripe size is used as parameter to determine how row/column oriented the layout is: 
+\begin{itemize}
+    \item stripe size 1: row-major
+    \item stripe size n: column major
+\end{itemize}
+\img{orc.png}
+
+\paragraph{Flexible Storage Model}
+Abstract physical from logical storage in \textbf{tile groups}.\\
+Data is divided into two sets: 
+\begin{itemize}
+    \item Hot data: insert/update/delete heavy data stored in row-major
+    \item Cold data: mostly Read data is stored column-major
+\end{itemize}
+\img{tiles.png}
+
+\subsection{Addressing Schemes}
+\subsubsection{Direct Addressing}
+
+\paragraph{Relative Byte Address (RBA)} uses a disk file as persistent address space, using byte offset as rid \\
+\begin{tabular}{c|p{6cm}} \hline
+     + & very efficient to access pages and records \\ \hline
+     - & no stability wrt. moving records 
+\end{tabular} \\
+
+\paragraph{Page Pointers (PP)} uses disk page numbers as rid \\
+\begin{tabular}{c|p{6cm}} \hline
+     + & very efficient to access page, locating a record within a page is also cheap (in-memory op) \\ \hline
+     - & only stable when moving records within a page
+\end{tabular} \\
+
+\subsubsection{Indirect Addressing}
+
+\paragraph{Logical Sequence Numbers (LSN)} assigns logical numbers to records and use address translation table to map to PP or RBA \\
+\begin{tabular}{c|p{6cm}} \hline
+     + & full stability \\ \hline
+     - & additional I/O op for table look-up (often in the buffer)
+\end{tabular} \\
+
+\paragraph{Logical Sequence Numbers with Portable Page Pointers (LSN/PPP)} tries to save the look-up by using a PP. If the PP is not valid a table look-up is performed\\
+\begin{tabular}{c|p{6cm}} \hline
+     + & full stability, if PPP valid saves one I/O \\ \hline
+     - & two additional I/O ops: one for loading the page and checking the PPP, one for the table look-up (often in the buffer)
+\end{tabular} \\
+
+\paragraph{Tuple Identifier with forwarding pointer (TID/FP)} uses <PageNo, SlotNo> pair as rid, where the slotNo is an index in page-local offset array. On relocation, leave fowarding address on origin page \\
+\begin{tabular}{c|p{6cm}} \hline
+     + & full stability \\ \hline
+     - & extra I/O if relocated, extra space for the pointer
+\end{tabular} \\
+\img{tid_fp.png}
+
+\section{File Organization}
+\paragraph{Cost Model}: \\
+\begin{tabular}{|c|p{6cm}|} \hline
+    Parameter & Description \\ \hline
+     b & number of pages per file \\ \hline
+     r & number of records per page \\ \hline
+     D & time to read a disk page \\ \hline
+     C & CPU time needed to process a record \\ \hline
+     H & CPU time taken to apply a function to a record e.g. comparison or hash \\ \hline
+\end{tabular} \\
+
+\paragraph{Cost of Scan} :
+\newline
+\begin{tabular}{|c|p{3cm}|p{5cm}|} \hline
+     File Org & Description & est. Cost \\ \hline
+     Heap & read all pages, process each of the records per page & $b \cdot (D + r \cdot C)$ \\ \hline
+     Sorted & Same as for heap files & $b \cdot (D + r \cdot C)$ \\ \hline
+     Hashed & additional free space due to overflow chain avoidance & $ (100/80) \cdot b \cdot (D + r \cdot C)$ \\ \hline
+\end{tabular} \\
+
+
+\paragraph{Cost of Search w. Equality}: \\ 
+\begin{tabular}{|c|p{3cm}|p{5cm}|} \hline
+     File Org & Description & est. Cost \\ \hline
+     Heap & if equality test is on primary key, adds factor $\frac{1}{2}$ & $b \cdot (D + r \cdot C)$ or  $ \frac{1}{2}b \cdot (D + r \cdot C)$ \\ \hline
+     Sorted & Assuming equality test is on sort criterion, use bin search & $\log_2 b \cdot D  log_2 r \cdot C$ \\ \hline
+     Hashed & Assuming equality test on hash attribute. Directly leads to the page containing the hit & $ H + D + r \cdot C$ or  $ H + D + \frac{1}{2} r \cdot C$ \\ \hline
+\end{tabular} \\
+
+\paragraph{Cost of Search w. Range}: \\ 
+\begin{tabular}{|c|p{3cm}|p{5cm}|} \hline
+     File Org & Description & est. Cost \\ \hline
+     Heap & Can appear everywhere => full scan & $b \cdot (D + r \cdot C)$ \\ \hline
+     Sorted & Search for equality=lower and scan sequentially until the first record with A > upper & $ \log_2 b \cdot D + \log_2 r \cdot C + \lfloor \frac{n}{r} \rfloor \cdot D + n \cdot C$ \\ \hline
+     Hashed & Performs worst as additional space needs to be scaned  & $ (100/80) \cdot b \cdot (D + r \cdot C)$ \\ \hline
+\end{tabular} \\
+
+\paragraph{Cost of Insert}:  \\ 
+\begin{tabular}{|c|p{3cm}|p{5cm}|} \hline
+     File Org & Description & est. Cost \\ \hline
+     Heap & Can be written to an arbitary page, involves reading and writing the page & $2D + C)$ \\ \hline
+     Sorted & Insert into a sepcific place and shift all subsequent  & $ \log_2 b \cdot D + \log_2 r \cdot C + \frac{1}{2} \cdot b \cdot (2 \cdot D + r \cdot C)$ \\ \hline
+     Hashed & Write to the page that the hash fn indicates  & $ H+ D + C + D$ \\ \hline
+\end{tabular} \\
+
+\paragraph{Cost of Delete}:  \\ 
+\begin{tabular}{|c|p{3cm}|p{5cm}|} \hline
+     File Org & Description & est. Cost \\ \hline
+     Heap & Read, delete and write & $2D + C)$ \\ \hline
+     Sorted & delete and shift all subsequent  & $ D + \frac{1}{2} \cdot b \cdot (2 \cdot D + r \cdot C)$ \\ \hline
+     Hashed & Access by rid is faster than hashing so same as heap & $  D + C + D$ \\ \hline
+\end{tabular} \\
+
+\paragraph{Summary}: \\
+There is no single file organization that performs best overall. The choice can make serious differences. Indexes may provide all of the benefits with modest overhead.

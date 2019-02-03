@@ -1,0 +1,32 @@
+\documentclass{report}
+\usepackage[utf8]{inputenc}
+\usepackage{graphicx}
+\usepackage{mathtools}
+\usepackage{amsmath}
+\usepackage{amssymb}
+
+\newcommand{\img}[1]{\begin{center}
+    \includegraphics[width=\textwidth,height=0.4\textheight,keepaspectratio]{img/#1}
+\end{center} }
+
+\title{Database System Architecture and Implementation \\
+Summary}
+\author{Fabian Klopfer}
+\date{February 2019}
+
+\begin{document}
+\maketitle
+\tableofcontents
+\newpage
+\section*{Overview}
+\img{architecture_overview.png} 
+\img{topic_overview.png}
+
+\include{0-disks_storage}
+\include{1-hash_tree_index}
+\include{2-query_eval}
+\include{3-query_opt}
+
+
+
+\end{document}
