@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- 
+   Copyright (c) 2013-2016 University of Konstanz.
+
+   This software is the proprietary information of University of Konstanz.
+   Use is subject to license terms.
+-->
+
+<systemCatalog name="sailors_catalog" pageSize="4096" xmlns="http://minibase/catalog/v1">
+   <tables>
+      <table name="Sailors">
+         <cardinality>750</cardinality>
+         <pages>8</pages>
+         <width>41</width>
+         <columns>
+            <column name="sid" type="integer">
+               <width>4</width>
+               <distinctValues>750</distinctValues>
+               <minimum>0</minimum>
+               <maximum>749</maximum>
+            </column>
+            <column name="sname" type="character varying(25)">
+               <width>25</width>
+               <distinctValues>675</distinctValues>
+            </column>
+            <column name="rating" type="integer">
+               <width>4</width>
+               <distinctValues>6</distinctValues>
+               <minimum>0</minimum>
+               <maximum>5</maximum>
+            </column>
+            <column name="age" type="numeric">
+               <width>8</width>
+               <distinctValues>102</distinctValues>
+               <minimum>18</minimum>
+               <maximum>120</maximum>
+            </column>
+         </columns>
+         <primaryKey>
+            <columns>
+               <column ref="sid" />
+            </columns>
+         </primaryKey>
+         <indexes>
+            <index name="idx_sailors_sid" type="btree" clustered="true">
+               <pages>3</pages>
+               <cardinality>750</cardinality>
+               <keyColumns>
+                  <column ref="sid" />
+               </keyColumns>
+            </index>
+            <index name="idx_sailors_name" type="shash">
+               <pages>4</pages>
+               <cardinality>675</cardinality>
+               <keyColumns>
+                  <column ref="sname" />
+               </keyColumns>
+            </index>
+            <index name="idx_sailors_rating" type="bitmap">
+               <page>1</page>
+               <cardinality>6</cardinality>
+               <keyColumns>
+                  <column ref="rating" />
+               </keyColumns>
+            </index>
+         </indexes>
+      </table>
+      <table name="Boats">
+         <cardinality>250</cardinality>
+         <pages>3</pages>
+         <width>39</width>
+         <columns>
+            <column name="bid" type="integer">
+               <width>4</width>
+               <distinctValues>250</distinctValues>
+               <minimum>0</minimum>
+               <maximum>249</maximum>
+            </column>
+            <column name="bname" type="character varying(25)">
+               <width>25</width>
+               <distinctValues>250</distinctValues>
+            </column>
+            <column name="color" type="character varying(10)">
+               <width>10</width>
+               <distinctValues>10</distinctValues>
+            </column>
+         </columns>
+         <primaryKey>
+            <columns>
+               <column ref="bid" />
+            </columns>
+         </primaryKey>
+
+      </table>
+      <table name="Reserves">
+         <cardinality>1500</cardinality>
+         <pages>16</pages>
+         <width>41</width>
+         <columns>
+            <column name="sid" type="integer">
+               <width>4</width>
+               <distinctValues>750</distinctValues>
+               <minimum>0</minimum>
+               <maximum>749</maximum>
+            </column>
+            <column name="bid" type="integer">
+               <width>4</width>
+               <distinctValues>250</distinctValues>
+               <minimum>0</minimum>
+               <maximum>249</maximum>
+            </column>
+            <column name="day" type="date">
+               <width>8</width>
+               <distinctValues>1125</distinctValues>
+            </column>
+            <column name="rname" type="character varying(25)">
+               <width>25</width>
+               <distinctValues>1350</distinctValues>
+            </column>
+         </columns>
+         <primaryKey>
+            <columns>
+               <column ref="sid" />
+               <column ref="bid" />
+               <column ref="day" />
+            </columns>
+         </primaryKey>
+         <foreignKey>
+            <sourceColumns>
+               <column ref="sid" />
+            </sourceColumns>
+            <targetColumns>
+               <column ref="sid" table="Sailors" />
+            </targetColumns>
+         </foreignKey>
+         <foreignKey>
+            <sourceColumns>
+               <column ref="bid" />
+            </sourceColumns>
+            <targetColumns>
+               <column ref="bid" table="Boats" />
+            </targetColumns>
+         </foreignKey>
+         <indexes>
+            <index name="idx_reserves_sidbid" type="btree" clustered="false">
+               <pages>3</pages>
+               <cardinality>120</cardinality>
+               <keyColumns>
+                  <column ref="sid" />
+                  <column ref="bid" />
+               </keyColumns>
+            </index>
+         </indexes>
+      </table>
+   </tables>
+</systemCatalog>

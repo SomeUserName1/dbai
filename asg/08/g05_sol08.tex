@@ -1,0 +1,73 @@
+%%
+%% Author: Fabian Klopfer (fabian.klopfer@ieee.org) 
+%%
+
+% Preamble
+\documentclass[a4paper]{article}
+
+% Packages
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{enumerate}
+\usepackage{fancyhdr}
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{a4wide}
+\usepackage{graphicx}
+\usepackage{wrapfig}
+\usepackage{tikz}
+\usepackage{listings}
+\usepackage{colortbl}
+\usepackage{tabularx}
+\usepackage{hyperref}
+\usepackage{multicol}
+\usepackage{float}
+
+\setlength{\headheight}{24pt}
+
+\pagestyle{fancy}
+\lhead{Fabian Klopfer (956507)|Simon Suckut (710134)}
+\rhead{Database Systems and Architecture\\Assignment 8}
+
+% Document
+\begin{document}
+	\section*{Exercise 2. Cost Estimations}\label{sec:exercise2}
+	E.g. for a HashJoin, factors that can influence tge costs are:
+	\begin{itemize}
+        \item available buffer space to be used by the operator
+        \item pre-existing indexes on a Join attibute
+	\end{itemize}
+
+
+	\section*{Exercise 3: Cost Calculations}\label{sec:exercise3}
+        Bypass selection: 
+        \begin{itemize}
+            \item[Goal:] eliminate tuples early, avoid duplicates
+            \item derived from CNF 
+            \item produces two disjoint outputs: results for which the predicate is true or false respectively
+        \end{itemize}
+        \begin{enumerate}[a.]
+            \item $(O_1 \vee O_2) \wedge O_3$ \\
+            \[ C_3 + S_3 \cdot (C_2 + (1 - S_2) \cdot C_1) = 10 + 0.8 \cdot (20 + (1-0.2) \cdot 100) = 10 + 0.8 \cdot 100 = 90 \]
+            \item $(O_1 \wedge O_2) \vee O_3 \equiv (O_1 \vee O_3) \wedge (O_2 \vee O_3)$ \\
+            \[ C_3 + (1 - S_3) \cdot C_2 + S_3 \cdot (C_2 + (1 - S_2) \cdot C_1) = 10 + (1 - 0.8) \cdot 20 + 0.8 \cdot (20 + (1-0.2) \cdot 100) = 10 + 4 + 0.8 \cdot 100 = 94 \]
+        \end{enumerate}
+        
+	\section*{Exercise 4: Join Conditions}\label{sec:exercise4}
+	\begin{tabular}{l|c|p{5cm}}
+	Join & Rank & Reason \\ \hline
+	Sort-Merge & 0 & The SortMergeJoin ca easily do nonequallity queries like range-based ones as the input is sorted. Sort orderings allow to find ranges by only searching for the minimum and maximum using binary search each \\
+	
+	B+Tree-Index-nested Loops & 1 & Can perform all Joins with all predicates if the B+Tree is on the right attribute quite efficiently by doing an index scan in the inner loop 
+        or in case of a clustered index it may directly make use of ranges in the underlying file \\
+	Block-nested Loops & 2 & Can perform almost all Joins with all predicates. Yields barely efficient performance, decreases I/O in comp. to the plain NLJ by grouping loads. \\
+	
+	Hash-Index-nested Loops & 3 & Similar to a HashJoin if the index is hash based. Can't answer most non-equality joins \\
+	
+	HashJoin & 4 & The HashJoin doesn't support Non-EquiJoins and also cant efficiently compute the cross product as it hashes all input values and only compares the hash. 
+                    The HashJoin is good at evenly distributing the tuples across buckets if the input is not skewed so that EquiJoins may be performed very fast but all other predicates fail to perform efficiently.
+    
+    \section*{Exercise 5: Histograms}\label{sec:exercise5}
+    EquiJoin => statt hash join where a.x < n, selection dann sortmerge oder so
+\end{document}
