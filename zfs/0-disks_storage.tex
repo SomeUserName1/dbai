@@ -165,7 +165,7 @@ File structure needs to keep track of pages with free space
 \img{file_directory_1.png}
 
 
-\begin{tabular}{c|p{4cm}|p{4cm}}
+\begin{tabular}{c|p{3cm}|p{3cm}}
      & Linked List & Directory \\ \hline
  + & easy to implement & free space management more efficient \\ \hline
  - & most pages in free space list & memory overhead \\
@@ -266,7 +266,7 @@ Data is divided into two sets:
      - & two additional I/O ops: one for loading the page and checking the PPP, one for the table look-up (often in the buffer)
 \end{tabular} \\
 
-\paragraph{Tuple Identifier with forwarding pointer (TID/FP)} uses <PageNo, SlotNo> pair as rid, where the slotNo is an index in page-local offset array. On relocation, leave fowarding address on origin page \\
+\paragraph{Tuple Identifier with forwarding pointer (TID/FP)} uses $<$PageNo, SlotNo$>$ pair as rid, where the slotNo is an index in page-local offset array. On relocation, leave fowarding address on origin page \\
 \begin{tabular}{c|p{6cm}} \hline
      + & full stability \\ \hline
      - & extra I/O if relocated, extra space for the pointer
@@ -286,7 +286,7 @@ Data is divided into two sets:
 
 \paragraph{Cost of Scan} :
 \newline
-\begin{tabular}{|c|p{3cm}|p{5cm}|} \hline
+\begin{tabular}{|c|p{3cm}|p{3cm}|} \hline
      File Org & Description & est. Cost \\ \hline
      Heap & read all pages, process each of the records per page & $b \cdot (D + r \cdot C)$ \\ \hline
      Sorted & Same as for heap files & $b \cdot (D + r \cdot C)$ \\ \hline
@@ -295,7 +295,7 @@ Data is divided into two sets:
 
 
 \paragraph{Cost of Search w. Equality}: \\ 
-\begin{tabular}{|c|p{3cm}|p{5cm}|} \hline
+\begin{tabular}{|c|p{3cm}|p{3cm}|} \hline
      File Org & Description & est. Cost \\ \hline
      Heap & if equality test is on primary key, adds factor $\frac{1}{2}$ & $b \cdot (D + r \cdot C)$ or  $ \frac{1}{2}b \cdot (D + r \cdot C)$ \\ \hline
      Sorted & Assuming equality test is on sort criterion, use bin search & $\log_2 b \cdot D  log_2 r \cdot C$ \\ \hline
@@ -303,7 +303,7 @@ Data is divided into two sets:
 \end{tabular} \\
 
 \paragraph{Cost of Search w. Range}: \\ 
-\begin{tabular}{|c|p{3cm}|p{5cm}|} \hline
+\begin{tabular}{|c|p{3cm}|p{3cm}|} \hline
      File Org & Description & est. Cost \\ \hline
      Heap & Can appear everywhere => full scan & $b \cdot (D + r \cdot C)$ \\ \hline
      Sorted & Search for equality=lower and scan sequentially until the first record with A > upper & $ \log_2 b \cdot D + \log_2 r \cdot C + \lfloor \frac{n}{r} \rfloor \cdot D + n \cdot C$ \\ \hline
@@ -311,7 +311,7 @@ Data is divided into two sets:
 \end{tabular} \\
 
 \paragraph{Cost of Insert}:  \\ 
-\begin{tabular}{|c|p{3cm}|p{5cm}|} \hline
+\begin{tabular}{|c|p{3cm}|p{3cm}|} \hline
      File Org & Description & est. Cost \\ \hline
      Heap & Can be written to an arbitary page, involves reading and writing the page & $2D + C)$ \\ \hline
      Sorted & Insert into a sepcific place and shift all subsequent  & $ \log_2 b \cdot D + \log_2 r \cdot C + \frac{1}{2} \cdot b \cdot (2 \cdot D + r \cdot C)$ \\ \hline
@@ -319,7 +319,7 @@ Data is divided into two sets:
 \end{tabular} \\
 
 \paragraph{Cost of Delete}:  \\ 
-\begin{tabular}{|c|p{3cm}|p{5cm}|} \hline
+\begin{tabular}{|c|p{3cm}|p{3cm}|} \hline
      File Org & Description & est. Cost \\ \hline
      Heap & Read, delete and write & $2D + C)$ \\ \hline
      Sorted & delete and shift all subsequent  & $ D + \frac{1}{2} \cdot b \cdot (2 \cdot D + r \cdot C)$ \\ \hline

@@ -1,1 +1,96 @@
-\chapter{Query Optimization}
+\chapter{Query Optimization and Database Tuning}
+
+The following steps are performed to answer a query Q:
+\begin{enumerate}
+    \item Query Parser: Parse Q and derive a relational algebra expression E
+    \item \textbf{Rewrite optimization (logical level):} From E generate set of logical plans L transforming and simplifying E
+    \item \textbf{Cost-based Optimization (physical level):} Generate a set of physical plans P by annotating the plans in L with access paths and operator algorithms
+    \item \textbf{Plan cost estimator:} Estimate the costs of each plan and chose the best one
+    \item Query Plan Evaluator: Execute the plan and return the result to the UI
+\end{enumerate}
+\textbf{Search space} $\equiv$ logical level $\cup$ physical level
+
+\img{query_eval}
+
+
+\section{Relational Algebra Equivalences \& Rewriting}
+\subsection{Relational Algebra Equivalences}
+\begin{enumerate}
+    \item \textbf{Cascading selections}
+    \[ \sigma_{c_1 \wedge \dots \wedge c_n}(R) \equiv \sigma_{c_1}(\dots \sigma_{c_n}(R) \dots) \]
+    
+    \item \textbf{commutativity of selections}
+    \[ \sigma_{c_q }( \sigma_{c_p}(R) ) \equiv \sigma_{c_p}( \sigma_{c_q}(R) ) \]
+    
+        \item \textbf{Cascading Projections}
+    \[ \pi_{c_1 \wedge \dots \wedge c_n}(R) \equiv \pi_{c_1}(\dots \pi_{c_n}(R) \dots) \]
+    
+    \item \textbf{Folding selections:} with $a_i \subseteq a_{i+1}$ only the last projection is needed (cutting off step by step vs. doing all cutoffs once)
+    \[ \sigma_{a_1}(R) \equiv \sigma_{a_1}(\dots \sigma_{a_n}(R) \dots) \]
+    
+    \item \textbf{Cross-Product and all Joins are associative} with r involves only T and S, p only involves R and S
+    \[ (R \bowtie_p S) \bowtie_{q \wedge r} T \equiv R \bowtie_{p \wedge q} (S \bowtie_r T) \]
+    
+    \item \textbf{Cross-Product and Natural Join are commutative}
+    \[ R \times S \equiv S \times R \]
+    \[ R \bowtie S \equiv S \bowtie R \]
+    
+    \item \textbf{Selection and cross product form a join}
+    \[ \sigma_p(R \times S) \equiv R \bowtie_p S \] 
+    
+    \item \textbf{Selections and joins can be combined}
+    \[ \sigma_q(R \bowtie_p S) \equiv R \bowtie_{p \wedge q} S \] 
+    
+    \item \textbf{Selections commutes with Joins and cross-product} let q only involves R
+    \[ \sigma_q(R \bowtie_p S) \equiv \sigma_q(R) \bowtie_{p} S \]     
+    
+    \item \textbf{Selections and projections distribute over joins and cross products} let p only involve R, q only involve S
+    \[ \sigma_{p \wedge q}(R \bowtie_r S) \equiv \sigma_p(R) \bowtie_{r} \sigma_q(S) \] 
+    \[ \pi_{a}(R \bowtie_r S) \equiv \pi_{a_1}(R) \bowtie_{r} \pi_{a_2}(S) \] 
+    
+    \item \textbf{Selections and Projections commute } if the projections keeps all attributes involved in the selection predicates
+    \[ \pi_a(\sigma_p(R)) \equiv \sigma_p(\pi_a(R)) \] 
+    
+    \item \textbf{commutativity of Union and Intersection}
+    \[ R \cup S \equiv S \cup R  \]
+    \[ R \cap S \equiv S \cap R  \]
+    
+    \item \textbf{Union and Intersection are associative}
+    \[ (R \cup S) \cup T \equiv R \cup (S \cup T) \]
+    \[ (R \cap S) \cap T \equiv R \cap (S \cap T) \]
+    
+    \item \textbf{Projection distributes over Union}
+    \[ \pi_{a}(R \cup S) \equiv \pi_{a}(R) \cup \pi_{a}(S) \] 
+    
+    \item \textbf{Selection, Union, Intersection and Difference are distributive}
+    \[ \sigma_{p}(R \cup S) \equiv \sigma_{p}(R) \cup \sigma_{p}(S) \] 
+    \[ \sigma_{p}(R \cap S) \equiv \sigma_{p}(R) \cap \sigma_{p}(S) \] 
+    \[ \sigma_{p}(R \setminus S) \equiv \sigma_{p}(R) \setminus \sigma_{p}(S) \] 
+    
+    \item \textbf{Selection, Intersection and Difference are commutative}
+    \[ \sigma_{p}(R \cap S) \equiv \sigma_p(R) \cap S \] 
+    \[ \sigma_{p}(R \setminus S) \equiv \sigma_p(R) \setminus S \] 
+\end{enumerate}
+
+\subsection{Relational Algebra Rewriting}
+\begin{enumerate}
+    \item Break apart conjunctive selections (Rule 1)
+    \item Move selections down the query tree (Rules 2, 9, 15)
+    \item Replace selection-cross product pairs with joins (Rule 8)
+    \item Break list of projections apart \& move them down, create new projections where possible (Rules 3, 10, 14)
+    \item Perform joins with the smallest expected result first
+\end{enumerate}
+
+\section{Plan Enumeration}
+\subsection{Single-Relation Queries}
+\begin{itemize}
+\end{itemize}
+
+\subsection{Multiple-Relation Queries}
+\subsection{Dynamic Programming}
+
+\section{Cardinality Estimation 30 Slides}
+\subsection{System Catalog}
+\subsection{Histograms}
+
+\section{Nested Subqueries: 30 Slides}

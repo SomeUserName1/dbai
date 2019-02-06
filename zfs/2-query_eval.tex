@@ -76,6 +76,187 @@ In Total Two-way Merge Sort costs \[ 2 N (1+ log_2 {N}) \text{I/O ops}\]
  \img{double_buffering_graph.png}
  
  \paragraph{B+ Tree for Sorting}
+ Clustered B+Tree Index: just load the N pages as they are already sorted. \\
  \img{b+tree_sort.png}
+ 
+ \section{Relational Operator Evalutation}
+ Different operator implementations exploit different physical properties:
+ \begin{itemize}
+     \item availability of indexes
+     \item sortedness of input
+     \item size of input file
+     \item available buffer space
+     \item buffer replacement policy, $\dots$
+ \end{itemize}
+ 
+ \paragraph{A logical Operator} is an operator used in the relational algebra. A \textbf{Physical Operator } is a specific variant of a logical operator. During query processing the \textbf{Query Optimizer} choses which physical operator shall replace the logical operator based on the physical properties of the Relations intermediate results.
+ 
+
+ \subsection{Join}
+ Most basic variant is to calculate the cross product between the relations and apply selection according to the join predicate.
+ 
+ \subsubsection{Nested Loops Join}
+ \begin{itemize}
+     \item straight foward implementation of cross product and join equivalence
+     \item needs only 3 buffer pages
+ \end{itemize}
+ \img{nlj_algo}
+ \img{nlj_costs}
+ 
+ \subsubsection{Block Nested Loops Join}
+ \begin{itemize}
+     \item Reads both relations in blocks of $b_1, b_2$ pages respectively
+     \item Costs: $\lceil ||R_1||/b_1 \rceil \cdot \lceil ||R_2||/b_2 \rceil$
+ \end{itemize}
+ \img{bnlj_basic}
+ \img{bnlj_hash_g}
+ \img{bnlj_hash}
+ 
+ \subsubsection{Index Nested Loops Join}
+ \begin{itemize}
+     \item Uses index on inner Relation to avoid enumerating the corss product
+     \item particularly usefull when index is clustered and join is very selective
+ \end{itemize}
+ \img{inl_algo}
+ \img{inl_cost}
+ \paragraph{Costs of an Index access}: \\
+ \begin{itemize}
+     \item Hash Index: $1.2 \begin{cases} 
+      1.2 & clustered \\
+      n & unclustered \\
+   \end{cases}$
+   \item B+Tree:  $log(|R_2|) \begin{cases} 
+      1 & clustered \\
+      n & unclustered \\
+   \end{cases}$
+ \end{itemize}
+ 
+ \subsubsection{Sort Merge Join}
+ \begin{itemize}
+     \item Uses sorting to partition both input
+     \item best-case is optimal
+     \item integration into external sort, block-grouped I/O, double buffering, replacement sort can be applied to optimize further
+     \item output sorted on join attribute 
+    \end{itemize}
+
+ \img{smj_algo}
+ \img{smj_costs}
+ 
+ \subsubsection{Grace Hash Join}
+ \begin{itemize}
+     \item works only for equality predicates
+     \item Two Phases: Partitioning and matching/probing phase 
+     \item follows divide and conquer: partition and do per partition in-memroy joins
+     \item may be accelerated by using second hash function for probing as with the block NLJ
+     \item Needs $B > \sqrt{f \cdot ||R||}$ Buffer pages where $f$ is the factor of increase to maintain a hash table over the partition instead of the partition only, so that partition stays in memory
+ \end{itemize}
+ \img{ghj_part}
+ \img{ghj_probe}
+ \img{ghj_algo}
+ \img{ghj_costs}
+ 
+ \subsection{Selection}
+  \img{selectivity}
+ \begin{itemize}
+     \item Implemented using  a combination of \textbf{iteration or indexing}
+     \item may be applied on the fly in a pipelined plan
+     \item Complex predicates may be expressed as conjuncts and disjuncts in terms of boolean logic
+     \item three evaluation option for CNF terms:
+     \begin{enumerate}
+         \item Single file scan
+         \item single index that match a subset of the primary conjuncts, apply others on the fly 
+         \item multiple indexes each matching a subset of conjuncts, applying intersection over rid on the fly
+     \end{enumerate}
+     \item similar for DNF but union instead of intersection and only possible when \textbf{all} predicates are matched by index. Solution: \textbf{Bypass Selection}
+ \end{itemize}
+ 
+ \paragraph{No index, unsorted Data:}
+ \img{selection_basic}
+ \img{selection_basic_cost}
+ 
+\paragraph{No index, sorted on selection predicate Data:}
+      \img{selection_sorted}
+  
+\paragraph{B+Tree index with predicate matching sort key}
+\img{selection_btree}
+\img{selection_btree_cost}
+
+\paragraph{Hash Index}
+\img{selection_hash}
+
+ \paragraph{Bypass selection} avoids expensive and unselective selections by applying the most selective and the cheap selections first. I.E. the goal is to eliminate tuples early and avoid duplicates.
+ \begin{enumerate}
+     \item Convert selection condition to CNF
+     \item apply most selective/cheapest predicate first and safe disjunct tuples (true/false on predicate $p_1$) 
+     \item repeat step 2 until all conjuncts are applied (when a conjunct contains disjuncts, just chain them)
+ \end{enumerate}
+ \img{selection_bypass}
+ 
+ 
+ \subsection{Projection}
+ \begin{itemize}
+     \item removes unwanted attributes and eliminates duplicates
+     \item implemented using iteration or partitioning
+     \item without duplicate elimination can be pipelined, with needs to be materialized
+ \end{itemize}
+ \begin{enumerate}
+     \item Do a FileScan, $\forall r \in $ File: cut off uneeded attributes and append to the output
+     \item do duplicate elimination as follows:
+ \end{enumerate}
+ \img{projection_sort}
+  \img{projection_sort_elim}
+   \img{projection_sort_cost}
+   
+    \img{projection_hash_p0}
+  \img{projection_hash_p0_g}
+   \img{projection_hash_p1}
+    \img{projection_hash_cost}
+    
+ \subsection{Set Operations \& Aggregations}
+ \paragraph{Set Operations:} Intersection and Cross Product are implemented as special cases of join (equality on all attributes join for intersection and true for the cross product). Union and difference are implemented as special case selection (union: mainly duplicate elimination, difference: variation of duplicate elimination)
+ \img{union_sort}
+ \img{union_hash}
+ 
+ \paragraph{Aggregations} There are 4 approaches: basic, using sorting, using hashing (last both only for aggregation and grouping), index only plans (if index contains all attributes needed for aggregation, group by if prefix matches index key and index is b+tree).
+ 
+ Basic Algorithm: 
+ \begin{enumerate}
+     \item Scan relation, maintaining running information
+     \item compute aggregate using running information when finished
+ \end{enumerate}
+ 
+ Using sorting (Aggregation and Grouping only): 
+ \begin{enumerate}
+     \item Sort relation, record running information for each distinct value group and compute aggregation when sorting has finished
+ \end{enumerate}
+ 
+ Using hashing (Aggregation and Grouping only):
+ \begin{enumerate}
+     \item build hash table on grouping attribute and maintain running information. compute aggreg
+ \end{enumerate}
+ 
+ \subsection{Buffering and Pipelines}
+ \begin{itemize}
+     \item concurrently executed operators share the buffer pool
+     \item unclustered indexes fill the buffer pool rapidly and make pinning new pages hard to predict.
+     \item repeated pattern of access can be speed up or be slowed down by a certain replacement policy
+     \item all pseudo code by now assumed Materialization
+     \item Pipelined plans can be used to avoid writing temporary files or delays to wait until some other operator has completely finished
+ \end{itemize}
+ \img{materialized}
+ 
+ \paragraph{Pipelined Evaluation} enables each operator to pass the result directly to the next operator. Each partial result may be passed, other operators can start computation as early as possible and execute in parallel.
+ \img{pipeline}
+ 
+ Demand-driven or volcano style pipelining (open-next-close) was examined in the exercises and previously when talking about iterators.
+ \img{iterator_0}
+ \img{iterator_1}
+ Note that there is also data-driven pipelining:
+ \begin{itemize}
+    \item Producer and consumer are connected by a queue
+    \item operators execute asynchronously, in parallel
+    \item operators are suspended by blocking queue calls
+    \item higher ressource requirements; systolic arrays
+ \end{itemize}
  
  

@@ -1,12 +1,14 @@
-\documentclass{report}
+\documentclass[a4paper]{report}
 \usepackage[utf8]{inputenc}
 \usepackage{graphicx}
 \usepackage{mathtools}
 \usepackage{amsmath}
 \usepackage{amssymb}
+\usepackage[top=30pt,bottom=30pt,left=48pt,right=46pt]{geometry}
+\usepackage[fontsize=7pt]{scrextend}
 
 \newcommand{\img}[1]{\begin{center}
-    \includegraphics[width=\textwidth,height=0.4\textheight,keepaspectratio]{img/#1}
+    \includegraphics[width=0.45\textwidth,height=0.3\textheight,keepaspectratio]{img/#1}
 \end{center} }
 
 \title{Database System Architecture and Implementation \\
@@ -15,18 +17,21 @@ Summary}
 \date{February 2019}
 
 \begin{document}
-\maketitle
+\begin{onecolumn}
+
+\begin{center}
+    \includegraphics[width=.8\textwidth,height=0.4\textheight,keepaspectratio]{img/architecture_overview.png} \\
+    \includegraphics[width=.8\textwidth,height=0.4\textheight,keepaspectratio]{img/topic_overview.png}\\
+\end{center}
+\end{onecolumn}
 \tableofcontents
 \newpage
-\section*{Overview}
-\img{architecture_overview.png} 
-\img{topic_overview.png}
-
+\begin{twocolumn}
 \include{0-disks_storage}
 \include{1-hash_tree_index}
 \include{2-query_eval}
 \include{3-query_opt}
-
+\end{twocolumn}
 
 
 \end{document}
