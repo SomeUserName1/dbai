@@ -84,13 +84,80 @@ The following steps are performed to answer a query Q:
 \section{Plan Enumeration}
 \subsection{Single-Relation Queries}
 \begin{itemize}
+    \item Plans without Index
+    \begin{enumerate}
+        \item heap file scan
+        \item selection \& join on-the-fly
+        \item sort according to group by
+        \item apply aggregation and having clauses on-the-fly
+    \end{enumerate}
+    \item Single-Index Access Path
+    \begin{enumerate}
+        \item Choose index that retrieves fewest pages
+        \item apply projections and non-primary selections
+        \item compute group by and aggregation by sorting
+    \end{enumerate}
+    \item Multiple-Index Access Path
+    \begin{enumerate}
+        \item Retrieve and intersect rid sets and sort result by page id
+        \item retrieve tuples that satisfy primary condition of all indexes
+        \item apply projections and non-primary selection terms. followed by grouping and aggregation
+    \end{enumerate}
+    \item Sorted Index Access Path
+    \begin{enumerate}
+        \item Retreive tuples in order required by group by
+        \item apply selection and projection to each retreived tuple on the fly
+        \item compute aggregate
+    \end{enumerate}
+    \item Index-Only Access Path
+    \begin{enumerate}
+        \item Do index scan
+        \item apply selection and projection on the fly
+        \item sort to group and do aggregation
+    \end{enumerate}
 \end{itemize}
 
 \subsection{Multiple-Relation Queries}
+Require joins, thus difficult to estimate costs, approx. $\frac{2n!}{n!}$ possible join trees \\
+$\Rightarrow$ restrict search space to left deep plans as they can be translated to a fully pipelined plan resulting in $n!$ possible join trees. \\
+
 \subsection{Dynamic Programming}
+\paragraph{Principle of Optimality:} The Assumption is that in order to find an optimal global plan, it is sufficient to consider optimal plans for all possible sub-plans \\
+\img{dynamic_prog}
+\img{dynamic_prog_algo}
+\img{greedy_join_enum}
+\img{optimizers}
 
-\section{Cardinality Estimation 30 Slides}
+\section{Cardinality Estimation}
+\img{cardinality_access}
+\img{cardinality_assumption}
+
+
 \subsection{System Catalog}
-\subsection{Histograms}
+\img{cardinality_profile}
+\img{cardinality_sel}
+\img{cardinality_sel_est}
+\img{cardinality_sel1}
+\img{cardinality_sel_comp}
+\img{cardinality_project}
+\img{cardinality_union}
+\img{cardinality_join0}
+\img{cardinality_join1}
 
-\section{Nested Subqueries: 30 Slides}
+
+\subsection{Histograms}
+\img{cardinality_hist_width}
+\img{cardinality_hist_depth}
+\img{cardinality_sampling}
+
+\section{Nested Subqueries}
+\img{nested_sub_types}
+\img{nested_sub_nj}
+\img{nested_sub_ja}
+\img{nested_sub_ja_0}
+\img{nested_sub_ja_1}
+\img{nested_sub_ja2}
+
+\img{nested_sub_ex}
+\img{nested_sub_any}
+\img{nested_sub_algo}
