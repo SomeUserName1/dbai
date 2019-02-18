@@ -78,9 +78,9 @@ public class HashJoin extends AbstractPhysicalJoin {
    @Override
    public Cost getLocalCost(final LogicalProperties localProperties,
          final LogicalProperties... inputProperties) {
-      final double leftCardinality = ((LogicalCollectionProperties) inputProperties[0]).getCardinality();
-      final double rightCardinality = ((LogicalCollectionProperties) inputProperties[1]).getCardinality();
-      final double outputCardinality = ((LogicalCollectionProperties) localProperties).getCardinality();
+      final double leftCardinality = (inputProperties[0]).getCardinality();
+      final double rightCardinality = (inputProperties[1]).getCardinality();
+      final double outputCardinality = (localProperties).getCardinality();
 
       final int leftWidth = ((LogicalCollectionProperties) inputProperties[0]).getSchema().getLength();
       final int rightWidth = ((LogicalCollectionProperties) inputProperties[1]).getSchema().getLength();

@@ -25,7 +25,7 @@ public class EquiJoinCommute extends AbstractRule {
    public EquiJoinCommute() {
       super(RuleType.EQUI_JOIN_COMMUTE,
               1 << RuleType.EQUI_JOIN_LTOR.ordinal() | 1 << RuleType.EQUI_JOIN_RTOL.ordinal()
-                      | 1 << RuleType.EQUI_JOIN_COMMUTE.ordinal(),
+                      | RuleType.EQUI_JOIN_EXCHANGE.ordinal() | 1 << RuleType.EQUI_JOIN_COMMUTE.ordinal(),
               new Expression(new EquiJoin(), new Expression(new Leaf(0)), new Expression(new Leaf(1))),
                       new Expression(new EquiJoin(),new Expression(new Leaf(1)), new Expression(new Leaf(0)))
       );
