@@ -17,7 +17,6 @@ Summary}
 \date{February 2019}
 
 \begin{document}
-\tableofcontents
 
 \begin{twocolumn}
 \section{Disk, File, Buffer Management}
@@ -29,7 +28,6 @@ Summary}
 	\item[Sector:] A sector is a single part of a track
 	\item[Track:] A track is a ring on a plater
 	\item[Cylinder:] A cylinder is the set of all tracks with the same diameter
-	\item[Head:] The head is mounted at the arm which is controlled by a stepper motor to move from track to track as the disk rotates
 \end{enumerate}
 The access time t is defined as \[ t = t_s + t_r + t_t \]
 where \begin{itemize}
@@ -40,24 +38,22 @@ where \begin{itemize}
 Sequential reads are much faster as one only needs to seek and to wait for the disk to rotate one time per sequential instead of on every access as in random I/O \\
 
 \subsubsection{RAID}
-Redundant Array of Independent Disks, provide redundancy to improve mean time to failure, improve performance using striping, hardware and software based implementations. \\
-Raid Levels: 
 \begin{enumerate}
 	\item[0] Striping \\
 	Best Write performance, better read performance, no reliability improvements
 	\item[1] Mirroring \\
 	On-line backup, no performance improvements
 	\item[10] Mirroring + Striping \\
-	reasonable performance w extra reliablility; write intensive workloads, small subsystems
+	reasonable performance w extra reliablility; write intensive workloads, small subsystems. RAID 0 over RAID 1: Stripe and mirror each disk
 	\item[2] ECC \\
-	inferior to 3
-	\item[3] Bit-Interleaved parity \\
-	Apropriate for large continuous block requests, bad for many small requests
-	\item[4] Block-Interleaved Parity \\
-	Inferior to 5
-	\item[5] Block-Interleaved Distributed Parity
+	Uses Hamming code to do error correction
+	\item[3] Bit-Interleaved parity: Byte-level stripping + extra parity disk \\
+	Apropriate for large continuous block requests, bad for many small requests; Parity on separate disk
+	\item[4] Block-Interleaved Parity: Block level stripping + parity disk \\
+	Inferior to 5; same as 3 just on block instead of byte level; parity on separate disk
+	\item[5] Block-Interleaved Distributed Parity: Block level stripping + distributed parity \\
 	Good general purpose solution, best performance with redundancy for small and large r and large w ops
-	\item[6] P+Q Parity \\
+	\item[6] P+Q Parity: Block level stripping + double distributed parity \\
 	highest level of reliability, like 5 with 2 parities
 \end{enumerate}
 \img{raid_overview.png}
@@ -65,99 +61,20 @@ Raid Levels:
 Initialization: let $i(n)$ be the number of bits set to 1 at position n on disk; n-th parity bit is set to 1 if $i(n)$ is odd else 0 \\
 Recovery: Let $j(n)$ be the no. of bits set to 1 at pos n on the non-failed disks. if $j(n)$ odd and parity bit 1 or $j(n)$ even and parity bit is 0, n-th value on failed disk is 0, else 1
 
-\subsection{Files}
-\paragraph{Free Slot Management: Pages}
-File structure needs to keep track of pages with free space
-
-\img{file_linked_list_0.png}
-\img{file_linked_list_1.png}
-\img{file_directory.png}
-\img{file_directory_1.png}
-
-
-\begin{tabular}{c|p{3cm}|p{3cm}}
-	& Linked List & Directory \\ \hline
-	+ & easy to implement & free space management more efficient \\ \hline
-	- & most pages in free space list & memory overhead \\
-\end{tabular}
-\paragraph{Free Slot Management: Slots}
-\begin{itemize}
-	\item Linked List of free blocks: 
-	\begin{enumerate}
-		\item pointer to first free block
-		\item when block is freed pre/append it to free block list
-		\item when block is needed take it from the list and adjust pointers
-	\end{enumerate}
-	
-	\item Bitmap of free blocks
-	\begin{enumerate}
-		\item reserve ceil($|blocks|/8$) bytes 
-		\item interpret bitwise (0 = free, 1 = used)
-	\end{enumerate}
-\end{itemize}
-
 \subsection{BufferManager}
 \img{replacement_names.png}
 \img{replacement_matrix.png}
 \img{replacement_graphic.png}
-\img{lrd.png}
 
 \section{B+Tree and Hash Indexes}
-Use an auxillary structure to provide support for certain functions.
 Variants: 1 resembles the sorted file on attribute A, thus only one such index should exist to avoid redundant storage of records. 2 and 3 use rids where 3 groups records that match a search key k.
 \begin{enumerate}
 	\item $<$k, $< \dots,A=k,\dots>>$
 	\item $<$k, rid$>$
 	\item $<$k, [rid$_1$, ...]$>$
 \end{enumerate}
- \subsection{Tree-based Indexes}
-Containing only one record per page those auxiliary structures recurse until all data fit onto one page in terms of representation.  Thus they are very useful for range selections. \\
 
-\paragraph{Fan-out:} The average number of childrean for a non-leaf node.
-
-\subsubsection{Indexed Sequential Access Method}
-
-\begin{enumerate}
-	\item Sort the file on attribute A and store it
-	\item for each page maintain a pair $<k_i,p_i>$ conatining the most extreme key wrt. a comparator of a certain Page i and a pointer to that page
-	\item use them as array to access the right page without scanning the page
-\end{enumerate}
-\subsubsection{B+Tree}
-\begin{itemize}
-	\item Similar to ISAM but dynamic wrt. updates $\Rightarrow$ no overflow chains/remains balanced
-	\item Search performance is also $\log_F N$
-	\item supports updates efficiently, guaranteed occupancy of 50%
-	\item non-leafes have same layout as in ISAM
-	\item leaf nodes contain pointers to records (instead of ISAM: Pages)
-	\item B+Tree index moves data records on split and merge, thus rid changes
-	\begin{enumerate}
-		\item $k_i^* = <k_i,<\text{attr}_1, \dots>>$
-		\item $k_i^* = <k_i, \text{rid}>$
-		\item $k_i^* = <k_i, [\text{rid}_1, \dots]>$
-	\end{enumerate}
-	\item occupancy rule might be relaxed
-	\item duplicates are not supported, supported as normal values (affects search, checking the siblings) or using variant 3 grouped
-\end{itemize}
-
-\paragraph{Searching:} As in ISAM, check the key and perform bin search until leaf is reached. \\
-
-\paragraph{Insert:} look for the right place, if not full insert. If full check siblings for redistribution (and update separator if necessary). If not possible split. \\
-
-\paragraph{Split:} Create new node, redistribute keys, take first value of the second leaf as new separator and propagate the spilt upwards. \\
-
-\paragraph{Delete:} Search leaf, delete value from it. If minimal occupancy below limit, check siblings for redistribution. If not possible, merge. \\
-
-\paragraph{Merge:} Merge with sibling node, delete key from parent level pointing to second leaf and propagate upwards
-
-\paragraph{Key Compression} uses prefixes or smaller data types to just approximate the actual values in the leafs. Another variant is to store common prefixes only once per node e.g. iri,o,r \\
-
-\paragraph{Bulk loading} If index is created, the tree is traversed $|\text{records}|$ times. Most DBMS provide therefore a bulk tree loading utility.
-\begin{enumerate}
-	\item for each key $k$ in the data file, create a sorted list of pages of index leaf entries (does not imply sorting the data file itself on key $k$ for variants 2,3; var 1 creates a clustered index)
-	\item allocate an empty root and let the first pointer $p_0$ point to the first entry of the sorted list
-	\item for each leaf level node/list entry insert the index entry $<p_n, \min(val(n))>$ into the rightmost index node above the leaf level
-\end{enumerate}
-
+\subsection{B+Tree}
 \paragraph{Invariants}
 \begin{itemize}
 	\item Order: d
@@ -169,9 +86,13 @@ Containing only one record per page those auxiliary structures recurse until all
 \end{itemize}
 
 \subsection{Hash-based Indexes}
+%TODO put growth/shrinkage in here; 
+%TODO add samples
+%TODO add proper algo
 "Unbeatable for Equality operations", no support for range queries
 \img{hash_fn.png}
 \img{hash_family.png}
+
  \subsubsection{Extendible Hashing}
 Uses in-memory bucket directory to keep track of the actual primary buckets by adapting the hash function and the access to the buckets
 
@@ -192,7 +113,7 @@ Uses in-memory bucket directory to keep track of the actual primary buckets by a
 	\item if no value goes to the new bucket an overflow chain is initialized
 \end{enumerate}
 
-\paragraph{Delete:} Analog to insertion
+\paragraph{Delete:} Just delete. If bucket is empty merge with level -1 bucket. If all local directories use n-1 bits, $n--$
 
 \subsubsection{Linear Hashing}
 \img{linear_hashing.png}
@@ -200,6 +121,7 @@ Uses in-memory bucket directory to keep track of the actual primary buckets by a
 	\item Init: level = 0, next = 0
 	\item current hash fn = $h_{\text{level}}$, active hash buckets: $[0,\dots, 2^{\text{level}} \cdot N]$
 	\item whenever a certain criterion is met, split the bucket which the next pointer references (e.g. \% occupancy reached in a bucket, overflow chain grew longer than x, $\dots$
+	\item Level is increased, if next is extended further than $2^{\text{level}} \cdot N -1 $
 \end{enumerate}
 
 \paragraph{Split}: All buckets with position < next have been already rehashed \\
@@ -211,7 +133,8 @@ Uses in-memory bucket directory to keep track of the actual primary buckets by a
 
 \paragraph{Insert:} like in static hashing plus additional check for split criterion \\
 
-\paragraph{Delete:} like with static hashing plus if bucket[$2^{\text{level}} \cdot N + next$].empty:
+\paragraph{Delete:} like with static hashing plus merging bucket at next and $\text{next} + 2^{\text{level}} N$ when the bucket on the next higher level is empty
+\\ if bucket[$2^{\text{level}} \cdot N + next$].empty:
 \begin{enumerate}
 	\item remove page pointed to by bucket[$2^{\text{level}} \cdot N + next$] from hash table 
 	\item next--, if next < 0, level--, next = $2^{\text{level}} \cdot N + next$
@@ -221,79 +144,49 @@ Uses in-memory bucket directory to keep track of the actual primary buckets by a
 
 
 
-\section{2 Query Evaluation}
-
+\section{Query Evaluation}
 
 \subsection{Two-Way Merge Sort}
-Sorts files of arbitary size (here $N=2^k$) with three pages of buffer space in multiple passes, producing a certain number of sub-files called \textbf{runs}
-\begin{itemize}
-	\item \textbf{Pass 0}: Sorts each of the $2^k$ input page individually in main memory, resulting in the same $2^k$ runs
-	\item \textbf{subsequent passes:} Merge pairs of runs into larger runs. Pass n produces $2^k-n$ runs
-	\item pass k produces one overall sorted final run
-\end{itemize}
 \img{2_way_merge_sort.png}
-\img{2_way_merge_sort_ex.png}
 
 \paragraph{Costs:} Each pass needs to read N pages, sort them in-memory and write them out again $\Rightarrow 2N$ I/O ops per pass \\
 in total there are pass 0 and k subsequent pass $\Rightarrow 1 + log_2 {N}$
-In Total Two-way Merge Sort costs \[ 2 N (1+ log_2 {N}) \text{I/O ops}\]
+In Total Two-way Merge Sort costs \[ 2 N (1+ log_2 {N}) \ \text{I/O ops}\]
 
 \subsection{External Merge Sort}
 like 2-way merge sort, but reduces the number of runs by using more buffer space to avoid creating one page runs in pass 0 and reduces the number of passes by merging more than two runs at a time.
 \img{external_ms.png}
-\img{external_ms_mem.png}
-\img{external_ms_buf.png}
-\img{external_ms_ex.png}
 
 \paragraph{Costs:} As in two way: read, sort, write $\Rightarrow 2N$ \\
 In pass 0 only $\lceil \frac{n}{B}\rceil$ are written thus only needs $\lceil \log_{B-1} \lceil \frac{n}{B}\rceil\rceil$ where B-1 pages are merged at the same time
-In Total External Merge Sort costs \[ 2 N (1+ \lceil \log_{B-1} \lceil \frac{N}{B}\rceil\rceil) \text{I/O ops}\]
-
-\subsubsection{Optimizations}
-\paragraph{Block-grouped I/O:} read blocks of b pages at once during merge. This decreases the I/O costs by factor b but decreases the fan-in thus increases the number of passes. In Total:
-\[ 2 N (1+ \lceil \log_{\lfloor \frac{B}{b}\rfloor-1} \lceil \frac{N}{B}\rceil\rceil) \text{I/O ops}\]
-
-\img{blocked_io.png}
-
-\paragraph{Tree of Losers}
-\img{tree_of_losers_algo.png}
-\img{tree_of_losers_ex.png}
-
-\paragraph{Replacement Sort}
-\img{replacement_sort_algo.png}
-\img{replacement_sort_graph}
-
-\paragraph{Double Buffering}
-\img{double_buffering_algo.png}
-\img{double_buffering_graph.png}
+In Total External Merge Sort costs \[ 2 N (1+ \lceil \log_{B-1} \lceil \frac{N}{B}\rceil\rceil) \ \text{I/O ops}\]
 
 \paragraph{B+ Tree for Sorting}
 Clustered B+Tree Index: just load the N pages as they are already sorted. \\
-\img{b+tree_sort.png}
+If unclustered, worst case is $|R| \cdot ||R||$
 
 \subsection{Join}
 Most basic variant is to calculate the cross product between the relations and apply selection according to the join predicate.
 
 \subsubsection{Nested Loops Join}
-\begin{itemize}
-	\item straight foward implementation of cross product and join equivalence
-	\item needs only 3 buffer pages
-\end{itemize}
+Needs 3 buffer pages \\
 \img{nlj_algo}
+\img{nlj_costs}
 
 
 \subsubsection{Block Nested Loops Join}
  Reads both relations in blocks of $b_1, b_2$ pages respectively
 \img{bnlj_basic}
+Block Nested Loops Join Costs: $\lceil ||R_1||/b_1 \rceil \cdot \lceil ||R_2||/b_2 \rceil$
 \img{bnlj_hash_g}
 \img{bnlj_hash}
 
+\paragraph{I/O Costs:} \[ \lceil ||S|| / B-2 \rceil + \lceil ||S|| / B-2 \rceil \cdot ||R||  \]
+
 \subsubsection{Index Nested Loops Join}
-\begin{itemize}
-	\item Uses index on inner Relation to avoid enumerating the corss product
-	\item particularly usefull when index is clustered and join is very selective
-\end{itemize}
+particularly usefull when index is clustered and join is very selective \\
 \img{inl_algo}
+\img{inl_cost}
 
 \paragraph{Costs of an Index access}: \\
 \begin{itemize}
@@ -308,52 +201,19 @@ Most basic variant is to calculate the cross product between the relations and a
 \end{itemize}
 
 \subsubsection{Sort Merge Join}
-\begin{itemize}
-	\item Uses sorting to partition both input
-	\item best-case is optimal
-	\item integration into external sort, block-grouped I/O, double buffering, replacement sort can be applied to optimize further
-	\item output sorted on join attribute 
-\end{itemize}
 
 \img{smj_algo}
+\img{smj_costs}
 
 
 \subsubsection{Grace Hash Join}
-\begin{itemize}
-	\item works only for equality predicates
-	\item Two Phases: Partitioning and matching/probing phase 
-	\item follows divide and conquer: partition and do per partition in-memroy joins
-	\item may be accelerated by using second hash function for probing as with the block NLJ
-	\item Needs $B > \sqrt{f \cdot ||R||}$ Buffer pages where $f$ is the factor of increase to maintain a hash table over the partition instead of the partition only, so that partition stays in memory
-\end{itemize}
+Works only for equality predicates. Two Phases following divide and conquer: Partitioning phase and do per partition in-memroy joins (Probing phase). Needs $B > \sqrt{f \cdot ||R||}$ Buffer pages where $f$ is the factor of increase to maintain a hash table over the partition instead of the partition only, so that partition stays in memory
 \img{ghj_part}
 \img{ghj_probe}
 \img{ghj_algo}
+\img{ghj_costs}
 
-
-\subsection{Selection}
-\img{selectivity}
-\begin{itemize}
-	\item Implemented using  a combination of \textbf{iteration or indexing}
-	\item may be applied on the fly in a pipelined plan
-	\item Complex predicates may be expressed as conjuncts and disjuncts in terms of boolean logic
-	\item three evaluation option for CNF terms:
-	\begin{enumerate}
-		\item Single file scan
-		\item single index that match a subset of the primary conjuncts, apply others on the fly 
-		\item multiple indexes each matching a subset of conjuncts, applying intersection over rid on the fly
-	\end{enumerate}
-	\item similar for DNF but union instead of intersection and only possible when \textbf{all} predicates are matched by index. Solution: \textbf{Bypass Selection}
-\end{itemize}
-
-\paragraph{No index, unsorted Data:}
-\img{selection_basic}
-
-\paragraph{B+Tree index with predicate matching sort key}
-\img{selection_btree}
-
-
-\paragraph{Bypass selection} avoids expensive and unselective selections by applying the most selective and the cheap selections first. I.E. the goal is to eliminate tuples early and avoid duplicates.
+\subsection{Bypass selection} 
 \begin{enumerate}
 	\item Convert selection condition to CNF
 	\item apply most selective/cheapest predicate first and safe disjunct tuples (true/false on predicate $p_1$) 
@@ -363,23 +223,13 @@ Most basic variant is to calculate the cross product between the relations and a
 
 
 \subsection{Projection}
-\begin{itemize}
-	\item removes unwanted attributes and eliminates duplicates
-	\item implemented using iteration or partitioning
-	\item without duplicate elimination can be pipelined, with needs to be materialized
-\end{itemize}
-\begin{enumerate}
-	\item Do a FileScan, $\forall r \in $ File: cut off uneeded attributes and append to the output
-	\item do duplicate elimination as follows:
-\end{enumerate}
 \img{projection_sort}
 \img{projection_sort_elim}
 \img{projection_hash_p0}
-\img{projection_hash_p0_g}
 \img{projection_hash_p1}
 
 
-\section{3-query opt}
+\section{Query Optimization}
 \begin{enumerate}
 	\item Query Parser: Parse Q and derive a relational algebra expression E
 	\item \textbf{Rewrite optimization (logical level):} From E generate set of logical plans L transforming and simplifying E
@@ -496,13 +346,10 @@ Most basic variant is to calculate the cross product between the relations and a
 \img{dynamic_prog}
 \img{dynamic_prog_algo}
 \img{greedy_join_enum}
-\img{optimizers}
-
 
 \subsection{Histograms}
 \img{cardinality_hist_width}
 \img{cardinality_hist_depth}
-\img{cardinality_sampling}
 
 \subsection{Nested Subqueries}
 \img{nested_sub_types}
@@ -515,106 +362,6 @@ Most basic variant is to calculate the cross product between the relations and a
 \img{nested_sub_ex}
 \img{nested_sub_any}
 \img{nested_sub_algo}
-
-\section{Cost Models}
-\img{cardinality_assumption}
-\subsection{System Catalog}
-size of buffer pool, page size, information and statistics about tables, views, indexes
-\img{sys_cat_info.png}
-\img{sys_cat_stat.png}
-\img{sys_cat_ex.png}
-\img{cardinality_profile}
-\img{cardinality_sel}
-\img{cardinality_sel_est}
-\img{cardinality_sel1}
-\img{cardinality_sel_comp}
-\img{cardinality_project}
-\img{cardinality_union}
-\img{cardinality_join0}
-\img{cardinality_join1}
-
-\subsection{File}
-\paragraph{Cost Model}: \\
-\begin{tabular}{|c|p{6cm}|} \hline
-	Parameter & Description \\ \hline
-	b & number of pages per file \\ \hline
-	r & number of records per page \\ \hline
-	D & time to read a disk page \\ \hline
-	C & CPU time needed to process a record \\ \hline
-	H & CPU time taken to apply a function to a record e.g. comparison or hash \\ \hline
-\end{tabular} \\
-
-\paragraph{Cost of Scan} :
-\begin{tabular}{|c|p{3cm}|p{3cm}|} \hline
-	File Org & Description & est. Cost \\ \hline
-	Heap & read all pages, process each of the records per page & $b \cdot (D + r \cdot C)$ \\ \hline
-	Sorted & Same as for heap files & $b \cdot (D + r \cdot C)$ \\ \hline
-	Hashed & additional free space due to overflow chain avoidance & $ (100/80) \cdot b \cdot (D + r \cdot C)$ \\ \hline
-\end{tabular} \\
-
-
-\paragraph{Cost of Search w. Equality}: \\ 
-\begin{tabular}{|c|p{3cm}|p{3cm}|} \hline
-	File Org & Description & est. Cost \\ \hline
-	Heap & if equality test is on primary key, adds factor $\frac{1}{2}$ & $b \cdot (D + r \cdot C)$ or  $ \frac{1}{2}b \cdot (D + r \cdot C)$ \\ \hline
-	Sorted & Assuming equality test is on sort criterion, use bin search & $\log_2 b \cdot D  log_2 r \cdot C$ \\ \hline
-	Hashed & Assuming equality test on hash attribute. Directly leads to the page containing the hit & $ H + D + r \cdot C$ or  $ H + D + \frac{1}{2} r \cdot C$ \\ \hline
-\end{tabular} \\
-
-\paragraph{Cost of Search w. Range}: \\ 
-\begin{tabular}{|c|p{3cm}|p{3cm}|} \hline
-	File Org & Description & est. Cost \\ \hline
-	Heap & Can appear everywhere => full scan & $b \cdot (D + r \cdot C)$ \\ \hline
-	Sorted & Search for equality=lower and scan sequentially until the first record with A > upper & $ \log_2 b \cdot D + \log_2 r \cdot C + \lfloor \frac{n}{r} \rfloor \cdot D + n \cdot C$ \\ \hline
-	Hashed & Performs worst as additional space needs to be scaned  & $ (100/80) \cdot b \cdot (D + r \cdot C)$ \\ \hline
-\end{tabular} \\
-
-\paragraph{Cost of Insert}:  \\ 
-\begin{tabular}{|c|p{3cm}|p{3cm}|} \hline
-	File Org & Description & est. Cost \\ \hline
-	Heap & Can be written to an arbitary page, involves reading and writing the page & $2D + C)$ \\ \hline
-	Sorted & Insert into a sepcific place and shift all subsequent  & $ \log_2 b \cdot D + \log_2 r \cdot C + \frac{1}{2} \cdot b \cdot (2 \cdot D + r \cdot C)$ \\ \hline
-	Hashed & Write to the page that the hash fn indicates  & $ H+ D + C + D$ \\ \hline
-\end{tabular} \\
-
-\paragraph{Cost of Delete}:  \\ 
-\begin{tabular}{|c|p{3cm}|p{3cm}|} \hline
-	File Org & Description & est. Cost \\ \hline
-	Heap & Read, delete and write & $2D + C)$ \\ \hline
-	Sorted & delete and shift all subsequent  & $ D + \frac{1}{2} \cdot b \cdot (2 \cdot D + r \cdot C)$ \\ \hline
-	Hashed & Access by rid is faster than hashing so same as heap & $  D + C + D$ \\ \hline
-\end{tabular} \\
-
-
-
-
-\subsection{Access Paths}
-\img{cardinality_access}
-If less than 5\% are retrieved, a table scan is cheaper.
-
-\paragraph{Hash vs. B+Tree Index:} Hash Indexes match if selection contains equality on indexed attribute; B+Trees match if selection contains any condition on an attribute in the trees search prefix. If matches with an index were found in a CNF, those conjuncts are called \textbf{primary conjuncts} \\
-
-\subsection{Operators}
-In Total Two-way Merge Sort costs \[ 2 N (1+ log_2 {N}) \text{I/O ops}\]
-In Total External Merge Sort costs \[ 2 N (1+ \lceil \log_{B-1} \lceil \frac{N}{B}\rceil\rceil) \text{I/O ops}\]
-
-
-\img{nlj_costs}
-Block Nested Loops Join Costs: $\lceil ||R_1||/b_1 \rceil \cdot \lceil ||R_2||/b_2 \rceil$
-\img{inl_cost}
-\img{smj_costs}
-\img{ghj_costs}
-\img{selectivity}
-
-\paragraph{Reduction Factor:} The fraction of tuples that satisfy a certain conjunct. For several conjuncts this factor is approximated, making an independence assumption. For range queries uniformity is assumed: For a tree index the reduction factor is estimated using the system catalouge: $\frac{High(T)- value}{High(T)- Low(T)}$ \\
-\img{selection_basic_cost}
-\img{selection_sorted}
-\img{selection_btree_cost}
-\img{selection_hash}
-\img{selection_bypass}
-\img{projection_sort_cost}
-\img{projection_hash_cost}
-
 
 \end{twocolumn}
 

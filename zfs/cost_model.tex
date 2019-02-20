@@ -1,0 +1,121 @@
+\documentclass[a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{graphicx}
+\usepackage{mathtools}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage[top=30pt,bottom=30pt,left=48pt,right=46pt]{geometry}
+\usepackage[fontsize=7pt]{scrextend}
+
+\newcommand{\img}[1]{\begin{center}
+		\includegraphics[width=0.4\textwidth,height=0.3\textheight,keepaspectratio]{img/#1}
+\end{center} }
+
+\title{Database System Architecture and Implementation \\
+	Summary}
+\author{Fabian Klopfer}
+\date{February 2019}
+
+\begin{document}
+	
+	\begin{twocolumn}
+\section{Cost Models}
+\img{cardinality_assumption}
+
+\subsection{File Otganization}
+\paragraph{Cost Model}: \\
+\begin{tabular}{|c|p{6cm}|} \hline
+	Parameter & Description \\ \hline
+	b & number of pages per file \\ \hline
+	r & number of records per page \\ \hline
+	D & time to read a disk page \\ \hline
+	C & CPU time needed to process a record \\ \hline
+	H & CPU time taken to apply a function to a record e.g. comparison or hash \\ \hline
+\end{tabular} \\
+
+\paragraph{Cost of Scan} : \\
+\begin{tabular}{|c|p{3cm}|p{3cm}|} \hline
+	File Org & Description & est. Cost \\ \hline
+	Heap & read all pages, process each of the records per page & $b \cdot (D + r \cdot C)$ \\ \hline
+	Sorted & Same as for heap files & $b \cdot (D + r \cdot C)$ \\ \hline
+	Hashed & additional free space due to overflow chain avoidance & $ (100/80) \cdot b \cdot (D + r \cdot C)$ \\ \hline
+\end{tabular} \\
+
+
+\paragraph{Cost of Search w. Equality}: \\ 
+\begin{tabular}{|c|p{3cm}|p{3cm}|} \hline
+	File Org & Description & est. Cost \\ \hline
+	Heap & if equality test is on primary key, adds factor $\frac{1}{2}$ & $b \cdot (D + r \cdot C)$ or  $ \frac{1}{2}b \cdot (D + r \cdot C)$ \\ \hline
+	Sorted & Assuming equality test is on sort criterion, use bin search & $\log_2 b \cdot D  log_2 r \cdot C$ \\ \hline
+	Hashed & Assuming equality test on hash attribute. Directly leads to the page containing the hit & $ H + D + r \cdot C$ or  $ H + D + \frac{1}{2} r \cdot C$ \\ \hline
+\end{tabular} \\
+
+\paragraph{Cost of Search w. Range}: \\ 
+\begin{tabular}{|c|p{3cm}|p{3cm}|} \hline
+	File Org & Description & est. Cost \\ \hline
+	Heap & Can appear everywhere => full scan & $b \cdot (D + r \cdot C)$ \\ \hline
+	Sorted & Search for equality=lower and scan sequentially until the first record with A > upper & $ \log_2 b \cdot D + \log_2 r \cdot C + \lfloor \frac{n}{r} \rfloor \cdot D + n \cdot C$ \\ \hline
+	Hashed & Performs worst as additional space needs to be scaned  & $ (100/80) \cdot b \cdot (D + r \cdot C)$ \\ \hline
+\end{tabular} \\
+
+\paragraph{Cost of Insert}:  \\ 
+\begin{tabular}{|c|p{3cm}|p{3cm}|} \hline
+	File Org & Description & est. Cost \\ \hline
+	Heap & Can be written to an arbitary page, involves reading and writing the page & $2D + C)$ \\ \hline
+	Sorted & Insert into a sepcific place and shift all subsequent  & $ \log_2 b \cdot D + \log_2 r \cdot C + \frac{1}{2} \cdot b \cdot (2 \cdot D + r \cdot C)$ \\ \hline
+	Hashed & Write to the page that the hash fn indicates  & $ H+ D + C + D$ \\ \hline
+\end{tabular} \\
+
+\paragraph{Cost of Delete}:  \\ 
+\begin{tabular}{|c|p{3cm}|p{3cm}|} \hline
+	File Org & Description & est. Cost \\ \hline
+	Heap & Read, delete and write & $2D + C)$ \\ \hline
+	Sorted & delete and shift all subsequent  & $ D + \frac{1}{2} \cdot b \cdot (2 \cdot D + r \cdot C)$ \\ \hline
+	Hashed & Access by rid is faster than hashing so same as heap & $  D + C + D$ \\ \hline
+\end{tabular} \\
+
+\subsection{System Catalog}
+size of buffer pool, page size, information and statistics about tables, views, indexes
+\img{sys_cat_info.png}
+\img{sys_cat_stat.png}
+\img{sys_cat_ex.png}
+\img{cardinality_profile}
+
+\subsection{Access Paths}
+\img{cardinality_access}
+If less than 5\% are retrieved, a table scan is cheaper.
+
+\paragraph{Hash vs. B+Tree Index:} Hash Indexes match if selection contains equality on indexed attribute; B+Trees match if selection contains any condition on an attribute in the trees search prefix. If matches with an index were found in a CNF, those conjuncts are called \textbf{primary conjuncts} \\
+
+\subsection{Operators}
+In Total Two-way Merge Sort costs \[ 2 N (1+ log_2 {N}) \text{I/O ops}\]
+In Total External Merge Sort costs \[ 2 N (1+ \lceil \log_{B-1} \lceil \frac{N}{B}\rceil\rceil) \text{I/O ops}\]
+
+
+\img{cardinality_sel}
+\img{selectivity}
+\img{selection_basic_cost}
+\img{selection_sorted}
+\img{selection_btree_cost}
+\img{selection_hash}
+\img{selection_bypass}
+\img{cardinality_sel_est}
+\img{cardinality_sel1}
+\img{cardinality_sel_comp}
+\img{cardinality_project}
+\img{projection_sort_cost}
+\img{projection_hash_cost}
+\img{cardinality_union}
+\img{cardinality_join0}
+\img{cardinality_join1}
+
+\img{nlj_costs}
+Block Nested Loops Join Costs: $\lceil ||R_1||/b_1 \rceil \cdot \lceil ||R_2||/b_2 \rceil$
+\img{inl_cost}
+\img{smj_costs}
+\img{ghj_costs}
+
+\end{twocolumn}
+
+
+\end{document}
