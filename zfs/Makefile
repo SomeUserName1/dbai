@@ -5,4 +5,4 @@ all :
 	pdflatex main.tex
 
 clean:
-	rm  *.toc *.aux *.log
+	rm  *.toc *.aux *.log *.synctex.gz
